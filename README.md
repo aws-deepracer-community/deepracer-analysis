@@ -28,10 +28,16 @@ for using the notebooks, it's worth to also have Jupytext installed.
 If you only plan to use the notebooks, I recommend that you make a copy of them to enable
 seamless pulls of any updates.
 
+If you pull latest changes for the notebooks, do also run
+```
+pip install --upgrade -r requirements.txt
+```
+in your venv. This way you will also get upgrades on the requirements.
+
 ## Running
 ```
 python3 -m venv venv
-pip install -r requirements.txt
+pip install --upgrade -r requirements.txt
 jupyter lab
 ```
 
@@ -69,3 +75,14 @@ Our understanding is that it is a license more permissive than the MIT license
 and allows for removing of the copyright headers.
 
 Unless clearly sated otherwise, this license applies to all files in this repository.
+
+## Troubleshooting
+
+If you face problems, do reach out to the [AWS DeepRacer Community](http://join.deepracing.io).
+Channel #dr-training-log-analysis has been created for this purpose.
+When you face an issue, it is worth running `pip freeze` and saving the output as it may be
+due to a specific version of the dependencies installed.
+
+## Contact
+You can contact Tomasz Ptak through the Community Slack: http://join.deepracing.io.
+
