@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.3.5
+#       jupytext_version: 1.4.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -49,6 +49,22 @@
 #
 # Let's get to it.
 #
+# ## Permissions
+#
+# Depending on where you are downloading the data from, you will need some permissions:
+# * Access to CloudWatch log streams
+# * Access to S3 bucket to reach the log files
+#
+# ## Installs and setups
+#
+# If you are using an AWS SageMaker Notebook to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
+
+# +
+# import sys
+
+# !{sys.executable} -m pip install deepracer-utils
+# -
+
 # ## Imports
 #
 # Run the imports block below:
@@ -102,7 +118,7 @@ tu = TrackIO()
 # +
 track: Track = tu.load_track("reinvent_base")
 
-track.road_poly
+pu.plot_trackpoints(track)
 # -
 
 # ## Get the logs
