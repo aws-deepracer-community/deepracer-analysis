@@ -98,11 +98,12 @@ resources and at the end of work restart the Kernel and run all the cells to pro
 a clean view in the notebook.
 
 ## Roadmap
-[x] Recreate the training and evaluation notebooks on top of the deepracer-utils
-[x] Apply changes from the original notebook commited since the creation of the log analysis branch
-[ ] Redo log analysis challenge PRs and apply them to notebooks
-[ ] Prepare simpler, specialised notebooks for everyday use
-[ ] Prepare a tutorial on how to use and contribute to a notebook
+* [x] Recreate the training and evaluation notebooks on top of the deepracer-utils
+* [x] Apply changes from the original notebook commited since the creation of the log analysis branch
+* [x] Add docker runtime
+* [ ] Redo log analysis challenge PRs and apply them to notebooks
+* [ ] Prepare simpler, specialised notebooks for everyday use
+* [ ] Prepare a tutorial on how to use and contribute to a notebook
 
 ## Credits
 We would like to thank:
