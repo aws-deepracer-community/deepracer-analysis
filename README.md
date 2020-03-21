@@ -20,7 +20,49 @@ a set of Python files from which a notebook can then be genereted.
 Finally, the project files have been moved to
 [DeepRacer utils](https://github.com/aws-deepracer-community/deepracer-utils).
 
-## Using the notebooks
+## Using the notebooks with Docker
+
+The recommended way to work with this project is by using Docker containers. Containers
+provide an isolated, disposable environment for your use. If you however prefer not to use
+Docker, see "Using the notebooks without Docker" below.
+
+Since you're using DeepRacer Analysis, chances are you've already got Docker installed.
+If not, find instructions in [Docker documentation](https://docs.docker.com/install/).
+
+Docker setup comes with Jupytext configured.
+
+### Building the Docker image
+
+Before you run your notebooks, you will have to build the docker image:
+```
+bin/build-docker-image.sh
+```
+I'd recommend that you do it every time when you pull changes from the git repository.
+
+This builds a Docker image on top of a jupyter-minimal image and installs required dependencies.
+
+### Starting the analysis
+
+To start using the analysis you have to first start the container and then open the notebook
+in a browser. The startup script starts Jupyter Notebook but is you add `lab` argument
+it will open Jupyter Lab - this is my preferred way
+```
+bin/start.sh lab
+bin/open-notebook.sh
+```
+If you're running on a remote system, you can use `url-to-notebook.sh` to obtain a url with
+a token to open in your browser. You can provide your url as an argument, otherwise you will
+get a localhost address:
+```
+bin/url-to-notebook.sh http://someurl.com:8888
+```
+will return
+```
+http://someulr.com:8888/?token=123fab41...
+```
+if the container is running.
+
+## Using the notebooks without Docker
 
 The notebooks require Jupyter to run, together with deepracer-utils. While not needed
 for using the notebooks, it's worth to also have Jupytext installed.
@@ -34,14 +76,15 @@ pip install --upgrade -r requirements.txt
 ```
 in your venv. This way you will also get upgrades on the requirements.
 
-## Running
+### Running
 ```
 python3 -m venv venv
+source venv/bin/activate
 pip install --upgrade -r requirements.txt
 jupyter lab
 ```
 
-## Modifying the notebooks
+### Modifying the notebooks
 If you want to use the notebooks as a user and don't intend to submit changes,
 simply use them through Jupyter Notebook or Jupyter Lab.
 
@@ -56,7 +99,7 @@ a clean view in the notebook.
 
 ## Roadmap
 [x] Recreate the training and evaluation notebooks on top of the deepracer-utils
-[ ] Apply changes from the original notebook commited since the creation of the log analysis branch
+[x] Apply changes from the original notebook commited since the creation of the log analysis branch
 [ ] Redo log analysis challenge PRs and apply them to notebooks
 [ ] Prepare simpler, specialised notebooks for everyday use
 [ ] Prepare a tutorial on how to use and contribute to a notebook
