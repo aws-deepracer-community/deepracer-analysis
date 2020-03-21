@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.3.5
+#       jupytext_version: 1.4.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -65,6 +65,8 @@ from deepracer.logs import CloudWatchLogs as cw, \
     AnalysisUtils as au, \
     PlottingUtils as pu, \
     ActionBreakdownUtils as abu
+
+import extensions.sage as ex
 
 # Ignore deprecation warnings we have no power over
 import warnings
@@ -127,6 +129,9 @@ track.road_poly
 stream_name = 'sim-sample' ## CHANGE This to your simulation application ID
 fname = 'logs/deepracer-%s.log' %stream_name  # The log will be downloaded into the specified path
 cw.download_log(fname, stream_prefix=stream_name)  # add force=True if you downloaded the file before but want to repeat
+fnameRobo = fname
+fname = !ls logs/sagemaker*.log
+fnameSage = fname[0]
 
 
 # DeepRacer for Dummies / ARCC repository - comment the above and uncomment
@@ -136,11 +141,46 @@ cw.download_log(fname, stream_prefix=stream_name)  # add force=True if you downl
 # # !ls -t /workspace/venv/logs/*.log
 # fname = !ls -t /workspace/venv/logs/*.log
 # fname = fname[0]
+# fnameRobo = fname
+# fnameSage = ''
 
 
 # Chris Rhodes' repository
 # Use a preferred way of saving the logs to a file , then set an fname value to load it
 # fname = /path/to/your/log/file
+# fnameRobo = fname
+# fnameSage = ''
+
+
+# Mattc' repo
+# fname1 = !ls -t logs/rl_coach*.log*
+# fnameRobo = fname1[0]
+# fname2 = !ls -t logs/sagemaker*.log*
+# fnameSage = fname2[0]
+
+
+print('robomaker log: {}'.format(fnameRobo))
+print('sagemaker log: {}'.format(fnameSage))
+# -
+
+#
+# ## Training Worker Stats
+#
+# For PPO we have:
+#
+# 1. Surrogate Loss
+# 2. KL Divergence
+# 3. Entropy
+#
+# These should all fluctuate but Surrogate Loss should tend toward zero.  Entropy will also tend towards zero. 
+#
+
+# +
+df = ex.extract_training_epochs(fnameSage)
+final_epochs = None if df is None else df.tail(1000)
+print(0 if df is None else df.shape)
+
+ex.plot_worker_stats(final_epochs)
 # -
 
 # ## Load the trace training log
@@ -175,7 +215,7 @@ cw.download_log(fname, stream_prefix=stream_name)  # add force=True if you downl
 # +
 EPISODES_PER_ITERATION = 20 #  Set to value of your hyperparameter in training
 
-data = slio.load_data(fname)
+data = slio.load_data(fnameRobo)
 df = slio.convert_to_pandas(data, episodes_per_iteration=EPISODES_PER_ITERATION)
 
 df = df.sort_values(['episode', 'steps'])
@@ -354,6 +394,30 @@ else:
 # A second side note: if you run this function for `complete_ones` instead of `simulation_agg`, suddenly the time histogram becomes more interesting as you can see whether completion times improve.
 
 au.scatter_by_groups(simulation_agg, title='Quintiles')
+
+# ## Plot the action space coverage
+
+ex.plot_action_space_coverage(df)
+
+# ## Plot rewards per Iteration
+#
+# This graph is useful to understand the mean reward and standard deviation within each episode 
+
+# +
+REWARD_THRESHOLD = 80
+
+#TIMESTAMP_COLUMN = 'timestamp' # For cloudwatch
+#TIMESTAMP_COLUMN = 'tstamp' # For csv logs
+#TIMESTAMP_COLUMN = 'simtime' # For local training either this or steps
+TIMESTAMP_COLUMN = 'steps'
+#df['simtime_from_steps'] = df['steps'] * 1/15
+#TIMESTAMP_COLUMN = 'simtime_from_steps'
+
+PACE_STANDARD_DEVIATIONS=4
+
+ex.plot_rewards_per_iteration(df, REWARD_THRESHOLD, TIMESTAMP_COLUMN, EPISODES_PER_ITERATION, 
+                              PACE_STANDARD_DEVIATIONS)
+# -
 
 # ## Data in tables
 #

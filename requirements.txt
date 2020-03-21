@@ -1,4 +1,4 @@
 deepracer-utils>=0.1
 jupyterlab>=2.0.0
 jupytext>=1.4.0
-
+seaborn>=0.10.0
