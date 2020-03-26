@@ -20,11 +20,22 @@ a set of Python files from which a notebook can then be genereted.
 Finally, the project files have been moved to
 [DeepRacer utils](https://github.com/aws-deepracer-community/deepracer-utils).
 
+## Required setup
+
+It is assumed that you have aws-cli installed and configured in your account.
+You will find instructions in [documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
+Without this the notebooks will not fail to load but fetching logs from AWS
+will not work. If you realise this after running the notebook, you can open
+a terminal withing Jupyter Lab and perform the configuration.
+
+If this happens in Docker, just bear in mind that ~/.aws folder will be created
+for you with root privileges - this may lead to permissions problems at some point.
+
 ## Using the notebooks with Docker
 
 The recommended way to work with this project is by using Docker containers. Containers
 provide an isolated, disposable environment for your use. If you however prefer not to use
-Docker, see "Using the notebooks without Docker" below.
+Docker (or are using Windows), see "Using the notebooks without Docker" below.
 
 Since you're using DeepRacer Analysis, chances are you've already got Docker installed.
 If not, find instructions in [Docker documentation](https://docs.docker.com/install/).
