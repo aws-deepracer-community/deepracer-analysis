@@ -4,7 +4,7 @@ This is a fork of the original deepracer-analysis which can be found at the [AWS
 * Create_Trackfile can be used to generate a track numpy file (especially for new tracks). Takes in printed waypoints and calculates the inner and outer borders.
 * Track_Analysis is used to create your custom racing line + to view the track and racing line characteristics.
 
-Many thanks to the DeepRacer community getting me started on this journey.
+Many thanks to the DeepRacer community getting me started on this journey.  
 -Michael
 
 # deepracer-analysis
