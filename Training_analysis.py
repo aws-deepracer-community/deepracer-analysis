@@ -60,9 +60,11 @@
 # If you are using an AWS SageMaker Notebook to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
 
 # +
+# Make sure you have deepracer-utils >= 0.9
+
 # import sys
 
-# !{sys.executable} -m pip install deepracer-utils
+# !{sys.executable} -m pip install --upgrade deepracer-utils
 # -
 
 # ## Imports
@@ -80,7 +82,8 @@ from deepracer.logs import CloudWatchLogs as cw, \
     NewRewardUtils as nr, \
     AnalysisUtils as au, \
     PlottingUtils as pu, \
-    ActionBreakdownUtils as abu
+    ActionBreakdownUtils as abu, \
+    DeepRacerLog
 
 # Ignore deprecation warnings we have no power over
 import warnings
@@ -123,161 +126,45 @@ pu.plot_trackpoints(track)
 
 # ## Get the logs
 #
-# Depending on which way you are training your model, you will need a different way to load the data.
+# Depending on which way you are training your model, you will need a slightly different way to load the data. 
 #
 # **AWS DeepRacer Console**
-# The logs are being stored in CloudWatch, in group `/aws/robomaker/SimulationJobs`. You will be using boto3 to download them based on the training ID (stream name prefix). If you wish to bulk export the logs from Amazon Cloudwatch to Amazon S3 :: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/S3ExportTasks.html
 #
-# **DeepRacer for Dummies/ARCC local training**
-# Those two setups come with a container that runs Jupyter Notebook (as you noticed if you're using one of them and reading this text). Logs are stored in `/logs/` and you just need to point at the latest file to see the current training. The logs are split for long running training if they exceed 500 MB. The log loading method has been extended to support that.
+# The logs can be downloaded from the training page. Once you download them, extract the archive into logs/[training-name] (just like logs/sample-logs)
 #
-# **Chris Rhodes' repo**
-# Chris repo doesn't come with logs storage out of the box. I would normally run `docker logs dr > /path/to/logfile` and then load the file.
+# **DeepRacer for Cloud**
+#     
+# If you're using local training, just point at your model's root folder in the minio bucket. If you're using any of the cloudy deployments, download the model folder to local and point at it.
 #
-# Below I have prepared a section for each case. In each case you can analyse the logs as the training is being run, just in case of the Console you may need to force downloading of the logs as the `cw.download_log` method has a protection against needless downloads.
+# **Deepracer for dummies/Chris Rhodes' Deepracer/ARCC Deepracer or any training solution other than the ones above**
 #
-# Select your preferred way to get the logs below and you can get rid of the rest.
+# This notebook has been updated to support the most recent setups. Most of the mentioned projects above are no longer compatible with AWS DeepRacer Console anyway so do consider moving to the ones actively maintained.
+#     
 
 # +
-# AWS DeepRacer Console
-stream_name = 'sim-sample' ## CHANGE This to your simulation application ID
-fname = 'logs/deepracer-%s.log' %stream_name  # The log will be downloaded into the specified path
-cw.download_log(fname, stream_prefix=stream_name)  # add force=True if you downloaded the file before but want to repeat
+model_logs_root = 'logs/sample-logs'
+log = DeepRacerLog(model_logs_root)
 
+# load logs into a dataframe
+log.load()
 
-# DeepRacer for Dummies / ARCC repository - comment the above and uncomment
-# the lines below. They rely on a magic command to list log files
-# ordered by time and pick up the most recent one (index zero).
-# If you want an earlier file, change 0 to larger value.
-# # !ls -t /workspace/venv/logs/*.log
-# fname = !ls -t /workspace/venv/logs/*.log
-# fname = fname[0]
+try:
+    print(log.agent_and_network())
+    print("-------------")
+    print(log.hyperparameters())
+    print("-------------")
+    print(log.action_space())
+except Exception:
+    print("Robomaker logs not available")
 
-
-# Chris Rhodes' repository
-# Use a preferred way of saving the logs to a file , then set an fname value to load it
-# fname = /path/to/your/log/file
+df = log.dataframe()
 # -
 
-# ## Load the trace training log
-#
-# Now that the data is downloaded, we need to load it into memory. We will first read it from file and then convert to data frames in Pandas. [Pandas](https://pandas.pydata.org/) is a Python library for handling and analysing large amounts of data series. Remember this name, you may want to learn more about how to use it to get more information that you would like to get from the logs. Examples below are hardly scratching the surface.
-#
-# One important information to enter is the setting of your Episodes per iteration hyperparameter. This is used to group the episodes into iterations. This information is valuable when later looking at graphs showing how the training progresses per iteration. You can use it to detect which iteration gave you better outcomes and, if in local training, you could move to that iteration's outcome for submissions in the AWS DeepRacer League or  for continuing the training.
-#
-# The log files you have just gathered above have lines like this one:
-# ```
-# SIM_TRACE_LOG:799,111,1.7594,4.4353,3.0875,-0.26,2.50,2,1.0000,False,True,71.5802,49,17.67,1555554451.1110387
-# ```
-# This is all that matters for us. The first two are some tests I believe and when loading they get skipped, then each next line has the following fields:
-# * episode number
-# * step number
-# * x coordinate
-# * y coordinate
-# * yaw of the car (where the car is heading)
-# * decision about turning (turn value from your action space)
-# * decision about throttle (speed value from your action space)
-# * decision index (value from your action space)
-# * reward value
-# * is the lap complete
-# * are all wheels on track?
-# * progress in the lap
-# * closest waypoint
-# * track length
-# * timestamp
-#
-# `la.load_data` and then `la.convert_to_pandas` read it and prepare for your usage. Sorting the values may not be needed, but I have experienced under some circumstances that the log lines were not ordered properly.
+# Unfortunately we need a temporary workaround until old and new utils have compatible names
+df["throttle"]=df["speed"]
+df["timestamp"]=df["tstamp"]
+df["steer"]=df["steering_angle"]
 
-# +
-EPISODES_PER_ITERATION = 20 #  Set to value of your hyperparameter in training
-
-data = slio.load_data(fname)
-df = slio.convert_to_pandas(data, episodes_per_iteration=EPISODES_PER_ITERATION)
-
-df = df.sort_values(['episode', 'steps'])
-# personally I think normalizing can mask too high rewards so I am commenting it out,
-# but you might want it.
-# slio.normalize_rewards(df)
-
-#Uncomment the line of code below to evaluate a different reward function
-#nr.new_reward(df, track.center_line, 'reward.reward_sample') #, verbose=True)
-# -
-
-# ## New reward
-#
-# Note the last line above: it takes a reward class from log-analysis/rewards, imports it, instantiates and recalculates reward values based on the data from the log. This lets you do some testing before you start training and rule out some obvious things.
-#
-# *If you find this confusing, don't worry, because it is confusing. You can safely ignore it for now and come back to it later.*
-#
-# This operation is possible because the logs contain all information needed to recreate the params for a given step. That said some could be implemented better and some were ignored for now and should be implemented.
-#
-# The sample reward mentioned in that line is located in `log-analysis/rewards/reward_sample.py` and looks like this:
-#
-# ```
-# from time import time
-#
-#
-# class Reward:
-#     def __init__(self, verbose=False):
-#         self.previous_steps = None
-#         self.initial_time = None
-#         self.verbose = verbose
-#
-#     @staticmethod
-#     def get_time(params):
-#         # remember: this will not return time before
-#         # the first step has completed so the total
-#         # time for lap will be lower by about 0.2s
-#         return params.get('timestamp', None) or time()
-#
-#     def reward_function(self, params):
-#         if self.previous_steps is None \
-#                 or self.previous_steps > params['steps']:
-#             # new lap!
-#             self.initial_time = self.get_time(params)
-#         else:
-#             # we're continuing a lap
-#             pass
-#
-#         steering_factor = 1.0
-#
-#         if abs(params['steering_angle']) > 14:
-#             steering_factor = 0.7
-#
-#         reward = float(steering_factor)
-#
-#         self.previous_steps = params['steps']
-#
-#         if self.verbose:
-#             print(params)
-#
-#         return reward
-#
-#
-# reward_object = Reward()
-#
-#
-# def reward_function(params):
-#     return reward_object.reward_function(params)
-#
-# ```
-#
-# After some imports a class is declared, it's called `Reward`, then the class is instantiated and a function `reward_function` is declared. This somewhat bloated structure has a couple benefits:
-# * It works in console/local training for actual training
-# * It lets you reload the definition for class Reward and retry the reward function multiple times after changes without much effort
-# * If you want to rely on state carried over between the steps, it's all contained in a reward object 
-#
-# The reward class hides two or three tricks for you:
-# * `get_time` lets you abstract from machine time in log analysis - the supporting code adds one extra param, `timestamp`. That lets you get the right time value in new_reward function
-# * the first condition allows detecting the beginning of an episode or even start of training you can use it for some extra operations between the episodes
-# * `verbose` can be used to provide some noisier prints in the reward function - you can switch them on when loading the reward function above.
-#
-# Just remember: not all params are provided, you are free to implement them and raise a Pull Request for log_analysis.df_to_params method.
-#
-# If you just wrap your reward function like in the above example, you can use it in both log analysis notebook and the training.
-#
-# Final warning: there is a loss of precision in the logs (rounded numbers) and also potentially potential bugs. If you find any, please fix, please report.
-#
 # ## Graphs
 #
 # The original notebook has provided some great ideas on what could be visualised in the graphs. Below examples are a slightly extended version. Let's have a look at what they are presenting and what this may mean to your training.
@@ -422,7 +309,7 @@ df[df['episode']==10]
 # If you have a final step reward that makes the rest of this histogram
 # unreadable, you can filter the last step out by using
 # `episode[:-1].plot.bar` instead of `episode.plot.bar`
-episode = df[df['episode']==771]
+episode = df[df['episode']==889]
 episode.plot.bar(x='closest_waypoint', y='reward')
 
 # ### Path taken for top reward iterations
@@ -441,10 +328,10 @@ episode.plot.bar(x='closest_waypoint', y='reward')
 # +
 # Some examples:
 # highest reward for complete laps:
-episodes_to_plot = complete_ones.nlargest(3,'reward')
+# episodes_to_plot = complete_ones.nlargest(3,'reward')
 
 # highest progress from all episodes:
-# episodes_to_plot = simulation_agg.nlargest(3,'progress')
+episodes_to_plot = simulation_agg.nlargest(3,'progress')
 
 pu.plot_selected_laps(episodes_to_plot, df, track)
 # -
@@ -499,81 +386,6 @@ iteration_id = 10
 pu.plot_selected_laps([iteration_id], df, track, section_to_plot = 'iteration')
 # -
 
-# # Bulk training load
-#
-# This is some slow and heavy stuff. You can download all logs from CloudWatch (or part of them if you play with `not_older_than` and `older_than` parameters that take a string representation of a date in ISO format, for instance `DD-MM-YYYY` works).
-#
-# Since it can be a lot of downloading, it is commented out in here to avoid accidental runs.
-#
-# Files downloaded once will not be downloaded again unless you add `force=True`.
-
-# +
-#logs = cw.download_all_logs('logs/deepracer-', '/aws/robomaker/SimulationJobs')
-# -
-
-# Load every log from a folder. Every single one. This is a lot of data. If you want to save yourself some time later, below you have code to save and load all that with use of pickle.
-#
-# Alternatively, `logs` returned from `download_all_logs` is a list of tuples in which first element is a path to a downloaded log file (even if it already exists, but would've been donwloaded if `force=True`), so you can use that to load logs in bulk.
-
-# +
-import os
-
-base_folder = 'logs'
-df_list = list()
-big_training_panda = None
-for stream in os.listdir(base_folder):
-    data = slio.load_data('%s/%s' % (base_folder, stream))
-    df = slio.convert_to_pandas(data)
-    df['stream'] = stream[10:]
-    if big_training_panda is not None:
-        big_training_panda = big_training_panda.append(df)
-    else:
-        big_training_panda = df
-# -
-
-# Have I mentioned a lot of data? This stores the data preprocessed for time savings
-big_training_panda.to_pickle('bulk_training_set.pickle')
-
-# +
-from pandas import read_pickle
-
-big_training_panda = read_pickle('bulk_training_set.pickle')
-
-# +
-# as usual, handle with care. Towards the end of the May race I needed 30-45 minutes to recalculate the reward.
-#nr.new_reward(big_training_panda, track.center_line, 'reward.reward_sample') #, verbose=True)
-
-# +
-# Below code is using stream name as part of grouping since otherwise there would be episode number collisions
-big_simulation_agg = au.simulation_agg(big_training_panda, 'stream')
-
-big_complete_ones = big_simulation_agg[big_simulation_agg['progress']==100]
-
-# +
-grouped = big_simulation_agg.groupby(['stream'])
-
-for name, group in grouped:
-    au.scatter_aggregates(group, title=name)
-# -
-
-# By the end of London Loop I had so much noise and random tries that wanted to find the most promising version of my model to submit. I used the below piece of code to iterate through all the stream values to detect the one with most promising times histogram. I should've added progress as well since the fastest ones hardly ever completed a lap. I will leave adding that as an exercise for the reader.
-
-values = []
-show = []
-show_above = -1
-i = 0
-for value in big_complete_ones.stream.values:
-    if value in values:
-        continue
-    values.append(value)
-    if i in show or i > show_above:
-        print(value)
-        big_complete_ones[big_complete_ones['stream']==value].hist(column=['time'], bins=20)
-    i += 1
-
-# display loads of everything
-big_simulation_agg
-
 # # Action breakdown per iteration and historgram for action distribution for each of the turns - reinvent track
 #
 # This plot is useful to understand the actions that the model takes for any given iteration. Unfortunately at this time it is not fit for purpose as it assumes six actions in the action space and has other issues. It will require some work to get it to done but the information it returns will be very valuable.
@@ -586,8 +398,8 @@ big_simulation_agg
 
 track_breakdown.keys()
 
-# The second parameter is either a single index or a list of indices for df iterations that you would like to view. You can for instance use `sorted_idx` list which is a sorted list of iterations from the highest to lowest reward.
-#
-# Bear in mind that you will have to provide a proper action naming in parameter `action_names`, this function assumes only six actions by default. I think they need to match numbering of actions in your model's metadata json file.
+# You can replace episode_ids with iteration_ids and make a breakdown for a whole iteration.
 
-abu.action_breakdown(df, 20, track, track_breakdown['reinvent2018'])
+abu.action_breakdown(df, track, track_breakdown=track_breakdown['reinvent2018'], episode_ids=[889])
+
+
