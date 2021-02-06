@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.4.1
+#       jupytext_version: 1.10.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -74,10 +74,11 @@
 # +
 import pandas as pd
 import matplotlib.pyplot as plt
+from pprint import pprint
 
 from deepracer.tracks import TrackIO, Track
-from deepracer.tracks.track_utils import track_breakdown
-from deepracer.logs import CloudWatchLogs as cw, \
+from deepracer.tracks.track_utils import track_breakdown, track_meta
+from deepracer.logs import \
     SimulationLogsIO as slio, \
     NewRewardUtils as nr, \
     AnalysisUtils as au, \
@@ -91,39 +92,6 @@ warnings.filterwarnings('ignore')
 # -
 
 
-# ## Load waypoints for the track you want to run analysis on
-#
-# The track waypoint files usually show up as new races start. Be sure to check for them in repository updates. You only need to load them in the block below.
-#
-# These files represent the coordinates of characteristic points of the track - the center line, inside border and outside border. Their main purpose is to visualise the track in images below. One thing that you may want to remember is that at the moment not all functions below work with all values of the coordinates. Especially some look awkward with bigger tracks or with negative coordinates. Usually there is an explanation on what to do to fix the view.
-#
-# The naming of the tracks is not super consistent. I'm also not sure all of them are available in the console or locally. You may want to know that:
-# * London_Loop and Virtual_May19_Train_track - are the AWS DeepRacer Virtual League London Loop tracks
-# * Tokyo - is the AWS DeepRacer Virtual League Kumo Torakku track
-# * New_York - are the AWS DeepRacer Virtual League Empire City training and evaluation tracks
-# * China - are the AWS Deepracer Virtual League Shanghai Sudu training and evaluation tracks
-# * reinvent_base - is the re:Invent 2019 racing track
-#
-# There are also other tracks that you may want to explore. Each of them has its own properties that you might find useful for your model.
-#
-# Remeber that evaluation npy files are a community effort to visualise the tracks in the trainings, they aren't 100% accurate.
-#
-# Tracks Available:
-
-# +
-# !ls tracks/
-
-tu = TrackIO()
-# -
-
-# Take the name from results above and paste below to load the key elements of the track and view the outline of it.
-
-# +
-track: Track = tu.load_track("reinvent_base")
-
-pu.plot_trackpoints(track)
-# -
-
 # ## Get the logs
 #
 # Depending on which way you are training your model, you will need a slightly different way to load the data. 
@@ -136,7 +104,7 @@ pu.plot_trackpoints(track)
 #     
 # If you're using local training, just point at your model's root folder in the minio bucket. If you're using any of the cloudy deployments, download the model folder to local and point at it.
 #
-# **Deepracer for dummies/Chris Rhodes' Deepracer/ARCC Deepracer or any training solution other than the ones above**
+# **Deepracer for dummies/Chris Rhodes' Deepracer/ARCC Deepracer or any training solution other than the ones above, read below**
 #
 # This notebook has been updated to support the most recent setups. Most of the mentioned projects above are no longer compatible with AWS DeepRacer Console anyway so do consider moving to the ones actively maintained.
 #     
@@ -149,21 +117,54 @@ log = DeepRacerLog(model_logs_root)
 log.load()
 
 try:
-    print(log.agent_and_network())
+    pprint(log.agent_and_network())
     print("-------------")
-    print(log.hyperparameters())
+    pprint(log.hyperparameters())
     print("-------------")
-    print(log.action_space())
+    pprint(log.action_space())
 except Exception:
     print("Robomaker logs not available")
 
 df = log.dataframe()
 # -
 
-# Unfortunately we need a temporary workaround until old and new utils have compatible names
-df["throttle"]=df["speed"]
-df["timestamp"]=df["tstamp"]
-df["steer"]=df["steering_angle"]
+# If the code above worked, you will see a list of details printed above: a bit about the agent and the network, a bit about the hyperparameters and some information about the action space. Now let's see what got loaded into the dataframe - the data structure holding your simulation information. the `head()` method prints out a few first lines of the data:
+
+df.head()
+
+# ## Load waypoints for the track you want to run analysis on
+#
+# The track waypoint files represent the coordinates of characteristic points of the track - the center line, inside border and outside border. Their main purpose is to visualise the track in images below.
+#
+# The naming of the tracks is not super consistent. The ones that we already know have been mapped to their official names in the track_meta dictionary.
+#
+# Some npy files have an 'Eval' suffix. One of the challenges in the past was that the evaluation tracks were different to physical tracks and we have recreated them to enable evaluation. Remeber that evaluation npy files are a community effort to visualise the tracks in the trainings, they aren't 100% accurate.
+#
+# Tracks Available:
+
+# +
+tu = TrackIO()
+
+for track in tu.get_tracks():
+    print("{} - {}".format(track, track_meta.get(track[:-4], "I don't know")))
+# -
+
+# Now let's load the track:
+
+# +
+# We will try to guess the track name first, if it 
+# fails, we'll use the constant in quotes
+
+try:
+    track_name = log.agent_and_network()["world"]
+except Exception as e:
+    track_name = "reinvent_base"
+
+
+track: Track = tu.load_track(track_name)
+
+pu.plot_trackpoints(track)
+# -
 
 # ## Graphs
 #
@@ -302,15 +303,21 @@ df[df['episode']==10]
 
 # ## Analyze the reward distribution for your reward function
 
-# This shows a histogram of actions per closest waypoint for episode 771.
+# +
+# This shows a histogram of actions per closest waypoint for episode 889.
 # Will let you spot potentially problematic places in reward granting.
 # In this example reward function is clearly `return 1`. It may be worrying
 # if your reward function has some logic in it.
 # If you have a final step reward that makes the rest of this histogram
 # unreadable, you can filter the last step out by using
 # `episode[:-1].plot.bar` instead of `episode.plot.bar`
-episode = df[df['episode']==889]
-episode.plot.bar(x='closest_waypoint', y='reward')
+episode = df[df['episode']==9]
+
+if episode.empty:
+    print("You probably don't have episode with this number, try a lower one.")
+else:
+    episode.plot.bar(x='closest_waypoint', y='reward')
+# -
 
 # ### Path taken for top reward iterations
 #
@@ -373,9 +380,9 @@ pu.plot_track(df[df['iteration'] == iteration_id], track)
 # ### Path taken in a particular episode
 
 # +
-episode_id = 122
+episode_id = 12
 
-pu.plot_selected_laps(simulation_agg[simulation_agg['episode'] == episode_id], df, track)
+pu.plot_selected_laps([episode_id], df, track)
 # -
 
 # ### Path taken in a particular iteration
@@ -399,7 +406,9 @@ pu.plot_selected_laps([iteration_id], df, track, section_to_plot = 'iteration')
 track_breakdown.keys()
 
 # You can replace episode_ids with iteration_ids and make a breakdown for a whole iteration.
+#
+# **Note: does not work for continuous action space (yet).** 
 
-abu.action_breakdown(df, track, track_breakdown=track_breakdown['reinvent2018'], episode_ids=[889])
+abu.action_breakdown(df, track, track_breakdown=track_breakdown.get('reinvent2018'), episode_ids=[12])
 
 
