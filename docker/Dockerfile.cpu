@@ -13,12 +13,15 @@ WORKDIR /workspace
 RUN mkdir -p /workspace/analysis
 
 # Install common pip packages
-COPY docker/requirements.txt ./
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt && rm /workspace/requirements.txt
 
 #Copy the files
 COPY *.ipynb /workspace/
+ADD tracks /workspace/tracks
+ADD reward /workspace/reward
+ADD logs /workspace/logs
 
 EXPOSE 8888
 VOLUME ["/workspace/analysis", "/workspace/logs", "/root/.aws"]
-CMD jupyter lab --ip=0.0.0.0 --port=8888 --allow-root
+CMD jupyter lab --ip=0.0.0.0 --port=8888 --allow-root --no-browser

@@ -1,0 +1,3 @@
+deepracer-utils
+jupyterlab>=2.0.0
+jupytext>=1.4.0
