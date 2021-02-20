@@ -1,0 +1,4 @@
+opencv-python
+tensorflow==1.15.4
+python-resize-image
+
