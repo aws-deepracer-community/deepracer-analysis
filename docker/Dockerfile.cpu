@@ -17,7 +17,7 @@ COPY docker/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt && rm /workspace/requirements.txt
 
 #Copy the files
-COPY files/ /workspace
+COPY *.ipynb /workspace/
 
 EXPOSE 8888
 VOLUME ["/workspace/analysis", "/workspace/logs", "/root/.aws"]

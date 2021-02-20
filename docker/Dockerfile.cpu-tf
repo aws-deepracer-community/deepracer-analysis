@@ -16,9 +16,8 @@ RUN mkdir -p /workspace/analysis
 COPY docker/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt && rm /workspace/requirements.txt
 
-# Install common pip packages
-COPY docker/requirements-tf.txt ./
-RUN pip install --no-cache-dir -r requirements-tf.txt && rm /workspace/requirements-tf.txt
+# Install tensorflow and visualization
+RUN pip install --no-cache-dir opencv-python tensorflow==1.15.4 python-resize-image
 
 #Copy the files
 COPY *.ipynb /workspace/
