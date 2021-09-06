@@ -6,7 +6,7 @@ LABEL maintainer="AWS Deepracer Community" \
 
 # Container Dependency Setup
 RUN apt-get update && apt-get upgrade -y && \ 
-	apt-get install --no-install-recommends software-properties-common libsm6 libxext6 libxrender-dev git wget python3-pip python3-setuptools -y && \
+	apt-get install --no-install-recommends software-properties-common libsm6 libxext6 libxrender-dev git wget python3-pip python3-setuptools awscli  -y && \
 	apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
