@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.10.0
+#       jupytext_version: 1.13.3
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -85,6 +85,7 @@ from deepracer.logs import \
     PlottingUtils as pu, \
     ActionBreakdownUtils as abu, \
     DeepRacerLog
+
 
 # Ignore deprecation warnings we have no power over
 import warnings

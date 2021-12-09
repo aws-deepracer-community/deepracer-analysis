@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.10.2
+#       jupytext_version: 1.13.1
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -51,19 +51,26 @@ import matplotlib.pyplot as plt
 
 import cv2
 
-import tensorflow as tf
-from tensorflow.gfile import GFile
+import tensorflow.compat.v1 as tf
+from tensorflow.io.gfile import GFile
 
 from deepracer.model import load_session, visualize_gradcam_discrete_ppo, rgb2gray
+
 # -
 
 # ## Configure and load files
 #
 # Provide the paths where the image and models are stored. Also define which iterations you would like to review.
 
+# +
+#img_selection = 'logs/test15-model/pictures/*.png'
+#model_path = 'logs/test15-model/model'
+#iterations = [3,4,5,6]
+
 img_selection = 'logs/sample-model/pictures/*.png'
 model_path = 'logs/sample-model/model'
 iterations = [15, 30, 48]
+# -
 
 # Load the model metadata in, and define which sensor is in use.
 
@@ -77,11 +84,16 @@ display(model_metadata)
 picture_files = sorted(glob.glob(img_selection))
 display(picture_files)
 
+# +
 action_names = []
 degree_sign= u'\N{DEGREE SIGN}'
 for action in model_metadata['action_space']:
-    action_names.append(str(action['steering_angle'])+ degree_sign + " "+"%.1f"%action["speed"])
+    display(action)
+    action_names.append(str(action['steering_angle']) + degree_sign + " "+"%.1f"%action["speed"])
+    
+#action_names.append(str(model_metadata['action_space']['steering_angle']) + degree_sign + " "+"%.1f"%model_metadata['action_space']["speed"])
 display(action_names)
+# -
 
 # ## Load the model files and process pictures
 # We will now load in the models and process the pictures. Output is a nested list with size `n` models as the outer and `m` picture as the inner list. The inner list will contain a number of values equal to the 
@@ -165,5 +177,19 @@ for i in list(range(len(view_models))):
        
 plt.show()
 # -
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
