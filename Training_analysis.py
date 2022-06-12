@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.10.0
+#       jupytext_version: 1.13.8
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -64,7 +64,7 @@
 
 # import sys
 
-# !{sys.executable} -m pip install --upgrade deepracer-utils
+# # !{sys.executable} -m pip install --upgrade deepracer-utils
 # -
 
 # ## Imports
@@ -110,7 +110,7 @@ warnings.filterwarnings('ignore')
 #     
 
 # +
-model_logs_root = 'logs/sample-logs'
+model_logs_root = 'logs/sample-console-logs'
 log = DeepRacerLog(model_logs_root)
 
 # load logs into a dataframe
@@ -410,5 +410,9 @@ track_breakdown.keys()
 # **Note: does not work for continuous action space (yet).** 
 
 abu.action_breakdown(df, track, track_breakdown=track_breakdown.get('reinvent2018'), episode_ids=[12])
+
+
+
+
 
 
