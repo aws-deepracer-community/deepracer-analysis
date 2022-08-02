@@ -1,4 +1,4 @@
-deepracer-utils
+deepracer-utils>=1.0.0
 jupyterlab>=2.0.0
 jupytext>=1.4.0
 ipympl
