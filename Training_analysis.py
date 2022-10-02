@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.1
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -114,7 +114,7 @@ model_logs_root = 'logs/sample-console-logs'
 log = DeepRacerLog(model_logs_root)
 
 # load logs into a dataframe
-log.load()
+log.load_robomaker_logs()
 
 try:
     pprint(log.agent_and_network())
