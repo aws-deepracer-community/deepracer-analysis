@@ -1,6 +1,6 @@
 cd logs
 if [[ $# != 2 ]] ; then
-echo 'USAGE: .bin/get-dr-on-the-spot-logs.sh s3://your_bucket/your_log_location logs/local_folder_to_copy_to'
+echo 'USAGE: .bin/get-deepracer-for-cloud-s3-logs.sh s3://your_bucket/your_log_location logs/local_folder_to_copy_to'
 exit 0
 fi
 echo "Copying Deep Racer logs from S3 to local for Log analysis"
