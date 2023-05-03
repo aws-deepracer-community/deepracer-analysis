@@ -8,3 +8,5 @@ logs/*
 *.pickle
 .ipynb_checkpoints
 .vscode/settings.json
+**/*.sw[po]
+**/.DS_Store

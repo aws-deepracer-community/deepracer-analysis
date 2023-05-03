@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.14.5
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -64,7 +64,7 @@
 
 # import sys
 
-# # !{sys.executable} -m pip install --upgrade deepracer-utils
+# !{sys.executable} -m pip install --upgrade deepracer-utils
 # -
 
 # ## Imports
@@ -110,7 +110,7 @@ warnings.filterwarnings('ignore')
 #     
 
 # +
-model_logs_root = 'logs/sample-console-logs'
+model_logs_root = 'logs/c33f8e27-fd7d-440e-b849-fe6be8ed5107'
 log = DeepRacerLog(model_logs_root)
 
 # load logs into a dataframe
