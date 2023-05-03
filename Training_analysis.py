@@ -64,7 +64,7 @@
 
 # import sys
 
-# !{sys.executable} -m pip install --upgrade deepracer-utils
+# # !{sys.executable} -m pip install --upgrade deepracer-utils
 # -
 
 # ## Imports

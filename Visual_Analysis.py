@@ -40,15 +40,6 @@
 #
 # Run the imports block below:
 
-# !conda install -y geos
-
-# +
-import subprocess, sys
-
-def pipInstall(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-
 # +
 pipInstall("opencv-python")
 pipInstall("tensorflow")
