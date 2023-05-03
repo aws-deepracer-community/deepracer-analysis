@@ -64,7 +64,7 @@
 
 # import sys
 
-# # !{sys.executable} -m pip install --upgrade deepracer-utils
+# !{sys.executable} -m pip install --upgrade deepracer-utils
 # -
 
 # ## Imports
@@ -110,7 +110,7 @@ warnings.filterwarnings('ignore')
 #     
 
 # +
-model_logs_root = 'logs/c33f8e27-fd7d-440e-b849-fe6be8ed5107'
+model_logs_root = 'logs/sample-console-logs'
 log = DeepRacerLog(model_logs_root)
 
 # load logs into a dataframe
