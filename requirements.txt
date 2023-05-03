@@ -2,3 +2,5 @@ deepracer-utils>=1.0.3
 jupyterlab>=2.0.0
 jupytext>=1.4.0
 ipympl
+opencv_python>=4.7.0
+tensorflow>=2.11.0

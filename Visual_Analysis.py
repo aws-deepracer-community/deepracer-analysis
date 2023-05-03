@@ -41,9 +41,6 @@
 # Run the imports block below:
 
 # +
-pipInstall("opencv-python")
-pipInstall("tensorflow")
-
 import json
 import os
 import glob
