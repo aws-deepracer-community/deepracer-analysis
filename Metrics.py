@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.10.2
+#       jupytext_version: 1.14.1
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -51,6 +51,13 @@ NUM_ROUNDS=1
 
 # ## Core configuration
 
+#Login to AWS if your device isn't already authenticated
+# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account
+import os
+#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 PREFIX='Demo-Reinvent'
 BUCKET='deepracer-local'
 
