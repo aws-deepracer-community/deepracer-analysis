@@ -31,9 +31,22 @@ a terminal withing Jupyter Lab and perform the configuration.
 If this happens in Docker, just bear in mind that ~/.aws folder will be created
 for you with root privileges - this may lead to permissions problems at some point.
 
-## Using the notebooks with Docker
+## Usage
 
-The recommended way to work with this project is by using Docker containers. Containers
+You have a few different ways to work with the notebooks:
+
+1. As part of a [Deepracer-for-Cloud](https://github.com/aws-deepracer-community/deepracer-for-cloud) installation
+1. Using the pre-built images from [Docker Hub](https://hub.docker.com/r/awsdeepracercommunity/deepracer-analysis)
+1. Build your own Docker images
+1. Launch the notebooks directly in a running Jupyter Lab / Visual Studio Code instance.
+
+## Using the notebooks with Deepracer-for-Cloud
+
+If you are training locally using DRfC, then the easiest way to get going is to run `dr-start-loganalysis`; the required docker image will be downloaded and a container will start which you can connect to. URL will be displayed in the terminal.
+
+## Using locally built the notebooks with Docker
+
+Another way to work with this project is by using Docker containers. Containers
 provide an isolated, disposable environment for your use. If you however prefer not to use
 Docker (or are using Windows), see "Using the notebooks without Docker" below.
 
