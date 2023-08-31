@@ -119,10 +119,12 @@ import os
 #os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
 #os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 # Initialise S3 and load S3 logs
-fh = S3FileHandler(bucket="",prefix="") #<-Add your S3 details, prefix should not including a'/' at the start or the end
+PREFIX='Demo-Reinvent'
+BUCKET='deepracer-local'
+fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX) #<-Add your S3 details, prefix should not including a'/' at the start or the end
 log = DeepRacerLog(filehandler=fh)
 log.load_training_trace()
-# Alternatively to load logs locally comment out above 3 lines and uncomment out below 3 lines
+# Alternatively to load logs locally comment out above 5 lines and uncomment out below 3 lines
 #model_logs_root = 'logs/sample-console-logs'
 #log = DeepRacerLog(model_logs_root)
 #log.load()
