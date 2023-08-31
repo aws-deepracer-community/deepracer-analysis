@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.1
+#       jupytext_version: 1.15.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -109,18 +109,23 @@ warnings.filterwarnings('ignore')
 #
 # This notebook has been updated to support the most recent setups. Most of the mentioned projects above are no longer compatible with AWS DeepRacer Console anyway so do consider moving to the ones actively maintained.
 #     
-# **DeepRacer On The Spot (or other S3 log hosting)**
-#
-# Don't use the section directly below, instead use the following section that starts '#login to AWS'
 
 # +
-#If you are loading logs directly to S3 do not run this section and instead run the section below
-model_logs_root = 'logs/sample-console-logs'
-log = DeepRacerLog(model_logs_root)
-
-# load logs into a dataframe
-log.load()
-
+#Login to AWS if your device isn't already authenticated
+# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account
+import os
+#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
+# Initialise S3 and load S3 logs
+fh = S3FileHandler(bucket="",prefix="") #<-Add your S3 details, prefix should not including a'/' at the start or the end
+log = DeepRacerLog(filehandler=fh)
+log.load_training_trace()
+# Alternatively to load logs locally comment out above 3 lines and uncomment out below 3 lines
+#model_logs_root = 'logs/sample-console-logs'
+#log = DeepRacerLog(model_logs_root)
+#log.load()
 try:
     pprint(log.agent_and_network())
     print("-------------")
@@ -132,21 +137,6 @@ except Exception:
 
 df = log.dataframe()
 # -
-
-#login to AWS
-# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account
-import os
-#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
-#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
-#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
-#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
-# Initialise S3 and load logs
-import boto3
-client = boto3.client('s3')
-fh = S3FileHandler(bucket="",prefix="") #<-Add your S3 details, prefix should not including a'/' at the start or the end
-log = DeepRacerLog(filehandler=fh)
-log.load_training_trace()
-df = log.dataframe()
 
 # If the code above worked, you will see a list of details printed above: a bit about the agent and the network, a bit about the hyperparameters and some information about the action space. Now let's see what got loaded into the dataframe - the data structure holding your simulation information. the `head()` method prints out a few first lines of the data:
 
@@ -218,7 +208,7 @@ pu.plot_trackpoints(track)
 #
 # #### Total reward per episode
 #
-# This graph has been taken from the orignal notebook and can show progress on certain groups of behaviours. It usually forms something like a triangle, sometimes you can see a clear line of progress that shows some new way has been first taught and then perfected.
+# This graph has been taken from the original notebook and can show progress on certain groups of behaviours. It usually forms something like a triangle, sometimes you can see a clear line of progress that shows some new way has been first taught and then perfected.
 #
 # #### Mean completed lap times per iteration
 #
