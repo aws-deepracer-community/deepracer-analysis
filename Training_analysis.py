@@ -75,6 +75,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
+import os
 
 from deepracer.tracks import TrackIO, Track
 from deepracer.tracks.track_utils import track_breakdown, track_meta
@@ -113,7 +114,6 @@ warnings.filterwarnings('ignore')
 # +
 #Login to AWS if your device isn't already authenticated
 # Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account
-import os
 #os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
 #os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
 #os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
