@@ -128,7 +128,7 @@ PREFIX='Demo-Reinvent'
 BUCKET='deepracer-local'
 fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX)
 
-#Specify if using multiple workers to true, otherwise can comment out or set to a value other than true
+#Specify if using multiple workers to true, otherwise set to false
 MULTIPLE_WORKERS='true'
 
 # If you run training locally you will need to add a few parameters
