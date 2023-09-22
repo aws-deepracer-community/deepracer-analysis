@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.15.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -67,10 +67,23 @@ from deepracer.logs import \
     SimulationLogsIO as slio, \
     EvaluationUtils as eu, \
     PlottingUtils as pu
+import os
 
 # Ignore deprecation warnings we have no power over
 import warnings
 warnings.filterwarnings('ignore')
+# -
+
+# ## Login
+#
+# Login to AWS.
+# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account: -
+
+# +
+#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 # -
 
 # ## Load waypoints for the track you want to run analysis on
