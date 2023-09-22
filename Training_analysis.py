@@ -124,6 +124,9 @@ PREFIX='Demo-Reinvent'
 BUCKET='deepracer-local'
 fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX)
 
+#Specify if using multiple workers to true, otherwise can comment out or set to a value other than true
+MULTIPLE_WORKERS='true'
+
 # If you run training locally you will need to add a few parameters
 # fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile='minio', s3_endpoint_url='http://minio:9000')
 
@@ -225,14 +228,16 @@ pu.plot_trackpoints(track)
 #
 # #### Completion rate per iteration
 #
-# It represents how big part of all episodes in an iteration is full laps. The value is from range [0, 1] and is a result of deviding amount of full laps in iteration by amount of all episodes in iteration. I say it has to go in pair with the previous one because you not only need a fast lapper, you also want a race completer.
+# It represents how big part of all episodes in an iteration is full laps. The value is from range [0, 1] and is a result of dividing amount of full laps in iteration by amount of all episodes in iteration. I say it has to go in pair with the previous one because you not only need a fast lapper, you also want a race completer.
 #
 # The higher the value, the more stable the model is on a given track.
 
 # +
-#If using multiple workers comment out the first line and use the line with secondgroup="unique_episode" in it
-simulation_agg = au.simulation_agg(df)
-#simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
+
+if MULTIPLE_WORKERS == 'true':
+    simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
+else:
+    simulation_agg = au.simulation_agg(df)
 
 au.analyze_training_progress(simulation_agg, title='Training progress')
 # -
@@ -360,9 +365,12 @@ else:
 
 # highest progress from all episodes:
 episodes_to_plot = simulation_agg.nlargest(3,'progress')
-# If using multiple workers comment out the first line and use the line with section_to_plot="unique_episode" in it
-pu.plot_selected_laps(episodes_to_plot, df, track)
-#pu.plot_selected_laps(episodes_to_plot, df, track, section_to_plot="unique_episode")
+
+if MULTIPLE_WORKERS == 'true':
+    pu.plot_selected_laps(episodes_to_plot, df, track, section_to_plot="unique_episode")
+else:
+    pu.plot_selected_laps(episodes_to_plot, df, track)
+
 # -
 # ### Plot a heatmap of rewards for current training. 
 # The brighter the colour, the higher the reward granted in given coordinates.
@@ -402,9 +410,11 @@ pu.plot_track(df[df['iteration'] == iteration_id], track)
 # ### Path taken in a particular episode
 
 episode_id = 12
-# If using multiple workers comment out the first line and use the line with section_to_plot="unique_episode" in it
-pu.plot_selected_laps([episode_id], df, track)
-#pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
+
+if MULTIPLE_WORKERS == 'true':
+    pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
+else: 
+    pu.plot_selected_laps([episode_id], df, track)
 
 # ### Path taken in a particular iteration
 
