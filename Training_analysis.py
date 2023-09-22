@@ -93,6 +93,17 @@ import warnings
 warnings.filterwarnings('ignore')
 # -
 
+# ## Login
+#
+# Login to AWS.
+# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account: -
+
+# +
+#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
+# -
 
 # ## Get the logs
 #
@@ -112,13 +123,6 @@ warnings.filterwarnings('ignore')
 #     
 
 # +
-#Login to AWS if your device isn't already authenticated
-# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account
-#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
-#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
-#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
-#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
-
 # Specify your bucket name and prefix to load S3 logs, prefix should not including a'/' at the start or the end
 PREFIX='Demo-Reinvent'
 BUCKET='deepracer-local'
