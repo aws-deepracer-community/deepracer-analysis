@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.10.2
+#       jupytext_version: 1.15.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -45,8 +45,21 @@
 from deepracer.logs import metrics
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 NUM_ROUNDS=1
+# -
+
+# ## Login
+#
+# Login to AWS.
+# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account: -
+
+# +
+#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 # -
 
 # ## Core configuration

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -75,6 +75,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
+import os
 
 from deepracer.tracks import TrackIO, Track
 from deepracer.tracks.track_utils import track_breakdown, track_meta
@@ -84,13 +85,25 @@ from deepracer.logs import \
     AnalysisUtils as au, \
     PlottingUtils as pu, \
     ActionBreakdownUtils as abu, \
-    DeepRacerLog
+    DeepRacerLog, \
+    S3FileHandler
 
 # Ignore deprecation warnings we have no power over
 import warnings
 warnings.filterwarnings('ignore')
 # -
 
+# ## Login
+#
+# Login to AWS.
+# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account: -
+
+# +
+#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
+# -
 
 # ## Get the logs
 #
@@ -110,11 +123,21 @@ warnings.filterwarnings('ignore')
 #     
 
 # +
-model_logs_root = 'logs/sample-console-logs'
-log = DeepRacerLog(model_logs_root)
+# Specify your bucket name and prefix to load S3 logs, prefix should not including a'/' at the start or the end
+PREFIX='Demo-Reinvent'
+BUCKET='deepracer-local'
+fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX)
 
-# load logs into a dataframe
-log.load()
+# If you run training locally you will need to add a few parameters
+# fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile='minio', s3_endpoint_url='http://minio:9000')
+
+log = DeepRacerLog(filehandler=fh)
+log.load_training_trace()
+
+# Alternatively to load logs locally comment out above lines and uncomment out below 3 lines
+#model_logs_root = 'logs/sample-console-logs'
+#log = DeepRacerLog(model_logs_root)
+#log.load()
 
 try:
     pprint(log.agent_and_network())
@@ -198,7 +221,7 @@ pu.plot_trackpoints(track)
 #
 # #### Total reward per episode
 #
-# This graph has been taken from the orignal notebook and can show progress on certain groups of behaviours. It usually forms something like a triangle, sometimes you can see a clear line of progress that shows some new way has been first taught and then perfected.
+# This graph has been taken from the original notebook and can show progress on certain groups of behaviours. It usually forms something like a triangle, sometimes you can see a clear line of progress that shows some new way has been first taught and then perfected.
 #
 # #### Mean completed lap times per iteration
 #
@@ -206,12 +229,16 @@ pu.plot_trackpoints(track)
 #
 # #### Completion rate per iteration
 #
-# It represents how big part of all episodes in an iteration is full laps. The value is from range [0, 1] and is a result of deviding amount of full laps in iteration by amount of all episodes in iteration. I say it has to go in pair with the previous one because you not only need a fast lapper, you also want a race completer.
+# It represents how big part of all episodes in an iteration is full laps. The value is from range [0, 1] and is a result of dividing amount of full laps in iteration by amount of all episodes in iteration. I say it has to go in pair with the previous one because you not only need a fast lapper, you also want a race completer.
 #
 # The higher the value, the more stable the model is on a given track.
 
 # +
+
 simulation_agg = au.simulation_agg(df)
+if df.nunique(axis=0)['worker'] > 1:
+    print("Multiple workers have been detected, reloading data with grouping by unique_episode")
+    simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
 
 au.analyze_training_progress(simulation_agg, title='Training progress')
 # -
@@ -340,7 +367,11 @@ else:
 # highest progress from all episodes:
 episodes_to_plot = simulation_agg.nlargest(3,'progress')
 
-pu.plot_selected_laps(episodes_to_plot, df, track)
+if df.nunique(axis=0)['worker'] > 1:
+    pu.plot_selected_laps(episodes_to_plot, df, track, section_to_plot="unique_episode")
+else:
+    pu.plot_selected_laps(episodes_to_plot, df, track)
+
 # -
 # ### Plot a heatmap of rewards for current training. 
 # The brighter the colour, the higher the reward granted in given coordinates.
@@ -379,11 +410,12 @@ pu.plot_track(df[df['iteration'] == iteration_id], track)
 
 # ### Path taken in a particular episode
 
-# +
 episode_id = 12
 
-pu.plot_selected_laps([episode_id], df, track)
-# -
+if df.nunique(axis=0)['worker'] > 1:
+    pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
+else: 
+    pu.plot_selected_laps([episode_id], df, track)
 
 # ### Path taken in a particular iteration
 
