@@ -367,7 +367,7 @@ else:
 # highest progress from all episodes:
 episodes_to_plot = simulation_agg.nlargest(3,'progress')
 
-if if df.nunique(axis=0)['worker'] > 1:
+if df.nunique(axis=0)['worker'] > 1:
     pu.plot_selected_laps(episodes_to_plot, df, track, section_to_plot="unique_episode")
 else:
     pu.plot_selected_laps(episodes_to_plot, df, track)
@@ -412,7 +412,7 @@ pu.plot_track(df[df['iteration'] == iteration_id], track)
 
 episode_id = 12
 
-if if df.nunique(axis=0)['worker'] > 1::
+if df.nunique(axis=0)['worker'] > 1:
     pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
 else: 
     pu.plot_selected_laps([episode_id], df, track)
