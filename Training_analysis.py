@@ -128,9 +128,6 @@ PREFIX='Demo-Reinvent'
 BUCKET='deepracer-local'
 fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX)
 
-#Specify if using multiple workers to True, otherwise set to False
-MULTIPLE_WORKERS=True
-
 # If you run training locally you will need to add a few parameters
 # fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile='minio', s3_endpoint_url='http://minio:9000')
 
@@ -238,10 +235,10 @@ pu.plot_trackpoints(track)
 
 # +
 
-if MULTIPLE_WORKERS == True:
+simulation_agg = au.simulation_agg(df)
+if df.nunique(axis=0)['worker'] > 1:
+    print("Multiple workers have been detected, reloading data with grouping by unique_episode")
     simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
-else:
-    simulation_agg = au.simulation_agg(df)
 
 au.analyze_training_progress(simulation_agg, title='Training progress')
 # -
@@ -370,7 +367,7 @@ else:
 # highest progress from all episodes:
 episodes_to_plot = simulation_agg.nlargest(3,'progress')
 
-if MULTIPLE_WORKERS == True:
+if if df.nunique(axis=0)['worker'] > 1:
     pu.plot_selected_laps(episodes_to_plot, df, track, section_to_plot="unique_episode")
 else:
     pu.plot_selected_laps(episodes_to_plot, df, track)
@@ -415,7 +412,7 @@ pu.plot_track(df[df['iteration'] == iteration_id], track)
 
 episode_id = 12
 
-if MULTIPLE_WORKERS == True:
+if if df.nunique(axis=0)['worker'] > 1::
     pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
 else: 
     pu.plot_selected_laps([episode_id], df, track)
