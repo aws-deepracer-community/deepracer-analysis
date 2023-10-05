@@ -62,6 +62,7 @@ import boto3
 
 # ## Core configuration
 
+# For basic setup set prefix to exact S3 location.  For advanced setup set prefix without the hypen and number at the end e.g. for test-1, test-2 set prefix as test 
 PREFIX='Demo-Reinvent'
 BUCKET='deepracer-local'
 NUM_ROUNDS=1
@@ -98,7 +99,7 @@ rounds=np.array([[1,2],[2,2]])
 #
 # You start by configuring a matrix where the parameters of each session. The first parameter is the training round (e.g. 1, 2, 3) and the second is the number of workers.
 
-rounds=np.array([[1,2],[2,2]])
+rounds=np.array([[1,WORKERS],[2,WORKERS]])
 
 # Load in the models. You will be given a brief statistic of what has been loaded.
 
@@ -108,7 +109,7 @@ tm = metrics.TrainingMetrics(BUCKET)
 # tm = metrics.TrainingMetrics(BUCKET, profile="minio", s3_endpoint_url="http://minio:9000")
 
 for r in rounds:
-    tm.addRound('{}-{}'.format(PREFIX, r[0]), training_round=r[0], workers=r[WORKERS])
+    tm.addRound('{}-{}'.format(PREFIX, r[0]), training_round=r[0], workers=r[WORKERS-1])
 # -
 
 # ## Analysis
