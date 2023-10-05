@@ -97,11 +97,17 @@ rounds=np.array([[1,WORKERS],[2,WORKERS]])
 #
 # The recommended way to do this is to have a naming convention for the training sessions (e.g. MyModel-1, MyModel-2). The below loading lines require this.
 #
-# You start by configuring a matrix where the parameters of each session. The first parameter is the training round (e.g. 1, 2, 3) and the second is the number of workers.
 
-FILEPATH = PREFIX + "-1/metrics"
-WORKERS = get_object_count(BUCKET, FILEPATH)
-rounds=np.array([[1,WORKERS],[2,WORKERS]])
+s3client=boto3.client('s3')
+models=s3client.list_objects(Bucket=BUCKET, Prefix=PREFIX, Delimiter='/')
+model_list=models['CommonPrefixes']
+list_model_workers = []
+for m in model_list:
+    modle_path=m['Prefix'][:-1]
+    model_number=modle_path[len(modle_path)-1]
+    WORKERS = get_object_count(BUCKET, PREFIX + "-" + model_number + "/metrics")
+    list_model_workers.append([int(model_number), WORKERS])
+rounds=np.asarray(list_model_workers)
 
 # Load in the models. You will be given a brief statistic of what has been loaded.
 
