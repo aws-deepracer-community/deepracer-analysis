@@ -81,6 +81,7 @@ FILEPATH = PREFIX + "/metrics"
 WORKERS = get_object_count(BUCKET, FILEPATH)
 tm = metrics.TrainingMetrics(BUCKET)
 tm.addRound(model_name=PREFIX, training_round=NUM_ROUNDS, workers=WORKERS)
+rounds=np.array([[1,2],[2,2]])
 
 # ### Local minio setup
 # If you run training locally you will need to add a few parameters
