@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.1
+#       jupytext_version: 1.15.0
 #   kernelspec:
-#     display_name: Python 3.6.9 64-bit
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -56,8 +56,24 @@ from IPython.display import display
 
 from boto3.exceptions import PythonDeprecationWarning
 warnings.filterwarnings("ignore", category=PythonDeprecationWarning)
+# -
+
+# ## Login
+#
+# Login to AWS.
+# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account: -
 
 # +
+#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
+# -
+
+# ## Load model from console
+
+# +
+#Enter the name of your model as it appears in the console
 MODEL='Analysis-Demo'
 ch = ConsoleHelper()
 model_arn = ch.find_model(MODEL)
