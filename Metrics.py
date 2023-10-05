@@ -66,6 +66,11 @@ import boto3
 PREFIX='Demo-Reinvent'
 BUCKET='deepracer-local'
 NUM_ROUNDS=1
+s3 = boto3.resource('s3')
+def get_object_count(bucket_name, folder_name):
+    bucket = s3.Bucket(bucket_name)
+    objects = bucket.objects.filter(Prefix=folder_name)
+    return sum(1 for _ in objects)
 
 # ## Loading data
 #
@@ -73,16 +78,11 @@ NUM_ROUNDS=1
 #
 # The basic setup covers loading in data from one single prefix, but is able to detect the number of workers. Data is stored in 'real' S3.
 
-s3 = boto3.resource('s3')
-def get_object_count(bucket_name, folder_name):
-    bucket = s3.Bucket(bucket_name)
-    objects = bucket.objects.filter(Prefix=folder_name)
-    return sum(1 for _ in objects)
 FILEPATH = PREFIX + "/metrics"
 WORKERS = get_object_count(BUCKET, FILEPATH)
 tm = metrics.TrainingMetrics(BUCKET)
 tm.addRound(model_name=PREFIX, training_round=NUM_ROUNDS, workers=WORKERS)
-rounds=np.array([[1,2],[2,2]])
+rounds=np.array([[1,WORKERS],[2,WORKERS]])
 
 # ### Local minio setup
 # If you run training locally you will need to add a few parameters
@@ -99,6 +99,8 @@ rounds=np.array([[1,2],[2,2]])
 #
 # You start by configuring a matrix where the parameters of each session. The first parameter is the training round (e.g. 1, 2, 3) and the second is the number of workers.
 
+FILEPATH = PREFIX + "-1/metrics"
+WORKERS = get_object_count(BUCKET, FILEPATH)
 rounds=np.array([[1,WORKERS],[2,WORKERS]])
 
 # Load in the models. You will be given a brief statistic of what has been loaded.
