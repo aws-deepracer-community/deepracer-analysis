@@ -111,7 +111,7 @@ tm = metrics.TrainingMetrics(BUCKET)
 # tm = metrics.TrainingMetrics(BUCKET, profile="minio", s3_endpoint_url="http://minio:9000")
 
 for r in rounds:
-    tm.addRound('{}-{}'.format(PREFIX, r[0]), training_round=r[0], workers=r[WORKERS-1])
+    tm.addRound('{}-{}'.format(PREFIX, r[0]), training_round=r[0], workers=r[1])
 # -
 
 # ## Analysis
