@@ -41,14 +41,12 @@
 #
 # Run the imports block below:
 
-# +
 from deepracer.logs import metrics
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import boto3
 
-NUM_ROUNDS=1
-# -
 
 # ## Login
 #
@@ -66,14 +64,23 @@ NUM_ROUNDS=1
 
 PREFIX='Demo-Reinvent'
 BUCKET='deepracer-local'
+NUM_ROUNDS=1
 
 # ## Loading data
 #
 # ### Basic setup
 #
-# The basic setup covers loading in data from one single prefix, with one single worker. Data is stored in 'real' S3.
+# The basic setup covers loading in data from one single prefix, but is able to detect the number of workers. Data is stored in 'real' S3.
 
-tm = metrics.TrainingMetrics(BUCKET, model_name=PREFIX)
+s3 = boto3.resource('s3')
+def get_object_count(bucket_name, folder_name):
+    bucket = s3.Bucket(bucket_name)
+    objects = bucket.objects.filter(Prefix=folder_name)
+    return sum(1 for _ in objects)
+FILEPATH = PREFIX + "/metrics"
+WORKERS = get_object_count(BUCKET, FILEPATH)
+tm = metrics.TrainingMetrics(BUCKET)
+tm.addRound(model_name=PREFIX, training_round=NUM_ROUNDS, workers=WORKERS)
 
 # ### Local minio setup
 # If you run training locally you will need to add a few parameters
