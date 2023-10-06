@@ -236,9 +236,12 @@ pu.plot_trackpoints(track)
 # +
 
 simulation_agg = au.simulation_agg(df)
-if df.nunique(axis=0)['worker'] > 1:
-    print("Multiple workers have been detected, reloading data with grouping by unique_episode")
-    simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
+try: 
+    if df.nunique(axis=0)['worker'] > 1:
+        print("Multiple workers have been detected, reloading data with grouping by unique_episode")
+        simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
+except:
+    print("Multiple workers not detected, assuming 1 worker")
 
 au.analyze_training_progress(simulation_agg, title='Training progress')
 # -
@@ -367,11 +370,14 @@ else:
 # highest progress from all episodes:
 episodes_to_plot = simulation_agg.nlargest(3,'progress')
 
-if df.nunique(axis=0)['worker'] > 1:
-    pu.plot_selected_laps(episodes_to_plot, df, track, section_to_plot="unique_episode")
-else:
+try:
+    if df.nunique(axis=0)['worker'] > 1:
+        pu.plot_selected_laps(episodes_to_plot, df, track, section_to_plot="unique_episode")
+    else:
+        pu.plot_selected_laps(episodes_to_plot, df, track)
+except:
+    print("Multiple workers not detected, assuming 1 worker")
     pu.plot_selected_laps(episodes_to_plot, df, track)
-
 # -
 # ### Plot a heatmap of rewards for current training. 
 # The brighter the colour, the higher the reward granted in given coordinates.
@@ -412,9 +418,13 @@ pu.plot_track(df[df['iteration'] == iteration_id], track)
 
 episode_id = 12
 
-if df.nunique(axis=0)['worker'] > 1:
-    pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
-else: 
+try:
+    if df.nunique(axis=0)['worker'] > 1:
+        pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
+    else: 
+        pu.plot_selected_laps([episode_id], df, track)
+except:
+    print("Multiple workers not detected, assuming 1 worker")
     pu.plot_selected_laps([episode_id], df, track)
 
 # ### Path taken in a particular iteration
