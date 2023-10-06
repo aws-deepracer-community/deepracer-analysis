@@ -147,7 +147,11 @@ except Exception:
     print("Robomaker logs not available")
 
 df = log.dataframe()
-EPISODES_PER_ITERATION=int(log.hyperparameters()['num_episodes_between_training']/(df.nunique(axis=0)['worker']))
+try:
+    EPISODES_PER_ITERATION=int(log.hyperparameters()['num_episodes_between_training']/(df.nunique(axis=0)['worker']))
+except Exception:
+    print("Multiple workers not detected, assuming 1 worker")
+    EPISODES_PER_ITERATION=int(log.hyperparameters()['num_episodes_between_training'])
 # -
 
 # ## Load the trace training log
@@ -191,9 +195,11 @@ df = df.sort_values(['episode', 'steps'])
 # -
 
 simulation_agg = au.simulation_agg(df)
-if df.nunique(axis=0)['worker'] > 1:
-    print("Multiple workers have been detected, reloading data with grouping by unique_episode")
-    simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
+try: 
+    if df.nunique(axis=0)['worker'] > 1:
+        print("Multiple workers have been detected, reloading data with grouping by unique_episode")
+        simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
+except:
 au.analyze_training_progress(simulation_agg, title='Training progress')
 
 au.scatter_aggregates(simulation_agg, 'Stats for all laps')
