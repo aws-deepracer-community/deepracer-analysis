@@ -118,8 +118,6 @@ pu.plot_trackpoints(track)
 # Select your preferred way to get the logs below and you can get rid of the rest.
 
 # +
-# AWS DeepRacer Console
-#fname = 'logs/sample-console-logs/logs/training/training-20220611230353-EHNgTNY2T9-77qXhqjBi6A-robomaker.log'
 
 # Specify your bucket name and prefix to load S3 logs, prefix should not including a'/' at the start or the end
 PREFIX='Demo-Reinvent'
