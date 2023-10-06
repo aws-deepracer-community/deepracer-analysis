@@ -66,12 +66,8 @@ from deepracer.logs import \
     AnalysisUtils as au, \
     SimulationLogsIO as slio, \
     EvaluationUtils as eu, \
-    PlottingUtils as pu, \
-    DeepRacerLog, \
-    S3FileHandler, \
-    LogType
+    PlottingUtils as pu
 import os
-from pprint import pprint
 
 # Ignore deprecation warnings we have no power over
 import warnings
@@ -119,43 +115,17 @@ track.road_poly
 #
 # Side note: if you want to download evaluation logs from AWS DeepRacer Console, this will be a bit more tricky. Evaluation logs are grouped together with training logs in same group `/aws/robomaker/SimulationJobs` and there isn't an obvious way to recognise which ones they are. That said, in `Evaluation Run Analysis` section below you have the ability to download a single evaluation file.
 
-# +
 # For the purpose of generating the notebook in a reproducible way
 # logs download has been commented out.
-#logs = [['logs/sample-console-logs/logs/evaluation/evaluation-20220612082853-IBZwYd0MRMqgwKlAe7bb0A-robomaker.log', '20220612082853'],
-#       ['logs/sample-console-logs/logs/evaluation/evaluation-20220612083839-PMfF__s5QJSQT_-E0rEYwg-robomaker.log', '20220612083839']]
+logs = [['logs/sample-console-logs/logs/evaluation/evaluation-20220612082853-IBZwYd0MRMqgwKlAe7bb0A-robomaker.log', '20220612082853'],
+       ['logs/sample-console-logs/logs/evaluation/evaluation-20220612083839-PMfF__s5QJSQT_-E0rEYwg-robomaker.log', '20220612083839']]
 
-# Specify your bucket name and prefix to load S3 logs, prefix should not including a'/' at the start or the end
-#PREFIX='Demo-Reinvent'
-#BUCKET='deepracer-local'
-#fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX)
-
-# If you run training locally you will need to add a few parameters
-# fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile='minio', s3_endpoint_url='http://minio:9000')
-
-#log = DeepRacerLog(filehandler=fh)
-#log.load_training_trace()
-
-# Alternatively to load logs locally comment out above lines and uncomment out below 3 lines
-model_logs_root = 'logs/sample-console-logs'
-log = DeepRacerLog(model_logs_root)
-log.load_robomaker_logs(type = LogType.EVALUATION, force=True)
-
-try:
-    pprint(log.agent_and_network())
-    print("-------------")
-    pprint(log.hyperparameters())
-    print("-------------")
-    pprint(log.action_space())
-except Exception:
-    print("Robomaker logs not available")
-
-bulk = log.dataframe()
-
+# Loads all the logs from the above time range
+bulk = slio.load_a_list_of_logs(logs)
 
 # ## Parse logs and visualize
 #
-# You will notice in here that reward graphs are missing, as are many others from the training. These have been trimmed down for clarity.
+# You will notice in here that reward graps are missing, as are many others from the training. These have been trimmed down for clarity.
 #
 # Do not get tricked though - this notebook provides features that the training one doesn't have, such as batch visualisation of race submission laps.
 #
