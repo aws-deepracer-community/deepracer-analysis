@@ -47,6 +47,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 # %matplotlib inline
+from pprint import pprint
 
 from deepracer.tracks import TrackIO, Track
 from deepracer.logs import \
@@ -121,8 +122,8 @@ pu.plot_trackpoints(track)
 #fname = 'logs/sample-console-logs/logs/training/training-20220611230353-EHNgTNY2T9-77qXhqjBi6A-robomaker.log'
 
 # Specify your bucket name and prefix to load S3 logs, prefix should not including a'/' at the start or the end
-PREFIX='training/reinvent_base/point-ahead-1'
-BUCKET='mark-base-paris-bucket-zo0zajagmm9z'
+PREFIX='Demo-Reinvent'
+BUCKET='deepracer-local'
 fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX)
 
 # If you run training locally you will need to add a few parameters
@@ -146,6 +147,7 @@ except Exception:
     print("Robomaker logs not available")
 
 df = log.dataframe()
+EPISODES_PER_ITERATION=int(log.hyperparameters()['num_episodes_between_training']/(df.nunique(axis=0)['worker']))
 # -
 
 # ## Load the trace training log
@@ -178,9 +180,8 @@ df = log.dataframe()
 # `la.load_data` and then `la.convert_to_pandas` read it and prepare for your usage. Sorting the values may not be needed, but I have experienced under some circumstances that the log lines were not ordered properly.
 
 # +
-EPISODES_PER_ITERATION = 20 #  Set to value of your hyperparameter in training
-
 df = df.sort_values(['episode', 'steps'])
+
 # personally I think normalizing can mask too high rewards so I am commenting it out,
 # but you might want it.
 # slio.normalize_rewards(df)
@@ -190,6 +191,9 @@ df = df.sort_values(['episode', 'steps'])
 # -
 
 simulation_agg = au.simulation_agg(df)
+if df.nunique(axis=0)['worker'] > 1:
+    print("Multiple workers have been detected, reloading data with grouping by unique_episode")
+    simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
 au.analyze_training_progress(simulation_agg, title='Training progress')
 
 au.scatter_aggregates(simulation_agg, 'Stats for all laps')
