@@ -198,6 +198,7 @@ try:
         print("Multiple workers have been detected, reloading data with grouping by unique_episode")
         simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
 except:
+    print("Multiple workers not detected, assuming 1 worker")
 au.analyze_training_progress(simulation_agg, title='Training progress')
 
 au.scatter_aggregates(simulation_agg, 'Stats for all laps')
