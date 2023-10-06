@@ -42,7 +42,7 @@
 #
 # Run the imports block below:
 
-# + tags=[]
+# +
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -52,7 +52,9 @@ from deepracer.tracks import TrackIO, Track
 from deepracer.logs import \
     SimulationLogsIO as slio, \
     PlottingUtils as pu,\
-    AnalysisUtils as au   #, \
+    AnalysisUtils as au, \
+    DeepRacerLog, \
+    S3FileHandler
 import os
 
 # Ignore deprecation warnings we have no power over
@@ -78,7 +80,7 @@ warnings.filterwarnings('ignore')
 #
 # Tracks Available:
 
-# + tags=[]
+# +
 tu = TrackIO()
 
 for f in tu.get_tracks():
@@ -114,9 +116,36 @@ pu.plot_trackpoints(track)
 #
 # Select your preferred way to get the logs below and you can get rid of the rest.
 
-# + tags=[]
+# +
 # AWS DeepRacer Console
-fname = 'logs/sample-console-logs/logs/training/training-20220611230353-EHNgTNY2T9-77qXhqjBi6A-robomaker.log'
+#fname = 'logs/sample-console-logs/logs/training/training-20220611230353-EHNgTNY2T9-77qXhqjBi6A-robomaker.log'
+
+# Specify your bucket name and prefix to load S3 logs, prefix should not including a'/' at the start or the end
+PREFIX='training/reinvent_base/point-ahead-1'
+BUCKET='mark-base-paris-bucket-zo0zajagmm9z'
+fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX)
+
+# If you run training locally you will need to add a few parameters
+# fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile='minio', s3_endpoint_url='http://minio:9000')
+
+log = DeepRacerLog(filehandler=fh)
+log.load_training_trace()
+
+# Alternatively to load logs locally comment out above lines and uncomment out below 3 lines
+#model_logs_root = 'logs/sample-console-logs'
+#log = DeepRacerLog(model_logs_root)
+#log.load()
+
+try:
+    pprint(log.agent_and_network())
+    print("-------------")
+    pprint(log.hyperparameters())
+    print("-------------")
+    pprint(log.action_space())
+except Exception:
+    print("Robomaker logs not available")
+
+df = log.dataframe()
 # -
 
 # ## Load the trace training log
@@ -148,11 +177,8 @@ fname = 'logs/sample-console-logs/logs/training/training-20220611230353-EHNgTNY2
 #
 # `la.load_data` and then `la.convert_to_pandas` read it and prepare for your usage. Sorting the values may not be needed, but I have experienced under some circumstances that the log lines were not ordered properly.
 
-# + tags=[]
+# +
 EPISODES_PER_ITERATION = 20 #  Set to value of your hyperparameter in training
-
-data = slio.load_data(fname)
-df = slio.convert_to_pandas(data, episodes_per_iteration=EPISODES_PER_ITERATION)
 
 df = df.sort_values(['episode', 'steps'])
 # personally I think normalizing can mask too high rewards so I am commenting it out,
@@ -161,15 +187,14 @@ df = df.sort_values(['episode', 'steps'])
 
 #Uncomment the line of code below to evaluate a different reward function
 #nr.new_reward(df, l_center_line, 'reward.reward_sample') #, verbose=True)
+# -
 
-# + tags=[]
 simulation_agg = au.simulation_agg(df)
 au.analyze_training_progress(simulation_agg, title='Training progress')
 
-# + tags=[]
 au.scatter_aggregates(simulation_agg, 'Stats for all laps')
 
-# + tags=[]
+# +
 complete_ones = simulation_agg[simulation_agg['progress']==100]
 
 if complete_ones.shape[0] > 0:
@@ -187,7 +212,7 @@ simulation_agg.nlargest(5, 'progress')
 # View information for a couple last episodes
 simulation_agg.tail()
 
-# + tags=[]
+# +
 # Set maximum quantity of rows to view for a dataframe display - without that
 # the view below will just hide some of the steps
 pd.set_option('display.max_rows', 500)
@@ -198,7 +223,7 @@ df[df['episode']==320]
 
 # # Extract Action Space List from LOG file
 
-# + tags=[]
+# +
 # Extract Action Space List
 dgr_norm = 1 # for degrees
 
@@ -273,7 +298,7 @@ for obj in asl:
 
 # ## Function definitions
 
-# + tags=[]
+# +
 ## Action Index Map
 def plot_index_map(actSpaceList):
     fig = plt.figure(figsize=(7, 4))
@@ -377,9 +402,7 @@ plot_index_map(asl)
 
 tr_plot = pu.plot_track(df, track, value_field="reward") 
 
-# + tags=[]
 plot_4_hist(df)
-# -
 
 plot_polar_hist(df)
 
