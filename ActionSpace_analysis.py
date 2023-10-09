@@ -182,7 +182,6 @@ except Exception:
 # `la.load_data` and then `la.convert_to_pandas` read it and prepare for your usage. Sorting the values may not be needed, but I have experienced under some circumstances that the log lines were not ordered properly.
 
 # +
-df = df.sort_values(['episode', 'steps'])
 
 # personally I think normalizing can mask too high rewards so I am commenting it out,
 # but you might want it.
