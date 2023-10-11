@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.0
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -15,17 +15,7 @@
 
 # # Training analysis for DeepRacer
 #
-# This notebook has been built based on the `DeepRacer Log Analysis.ipynb` provided by the AWS DeepRacer Team. It has been reorganised and expanded to provide new views on the training data without the helper code which was moved into utility `.py` files.
-#
-# ## Usage
-#
-# I have expanded this notebook from to present how I'm using this information. It contains descriptions that you may find not that needed after initial reading. Since this file can change in the future, I recommend that you make its copy and reorganize it to your liking. This way you will not lose your changes and you'll be able to add things as you please.
-#
-# **This notebook isn't complete.** What I find interesting in the logs may not be what you will find interesting and useful. I recommend you get familiar with the tools and try hacking around to get the insights that suit your needs.
-#
-# ## Contributions
-#
-# As usual, your ideas are very welcome and encouraged so if you have any suggestions either bring them to [the AWS DeepRacer Community](http://join.deepracing.io) or share as code contributions.
+# This notebook has been built based on the `DeepRacer Log Analysis.ipynb` provided by the AWS DeepRacer Team. It has been reorganised and expanded to provide new views on the training data without the helper code which was moved into the [`deepracer-utils` library](https://github.com/aws-deepracer-community/deepracer-utils).
 #
 # ## Training environments
 #
@@ -36,24 +26,18 @@
 # Before you start using the notebook, you will need to install some dependencies. If you haven't yet done so, have a look at [The README.md file](/edit/README.md#running-the-notebooks) to find what you need to install.
 #
 # Apart from the install, you also have to configure your programmatic access to AWS. Have a look at the guides below, AWS resources will lead you by the hand:
-#
-# AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
-#
-# Boto Configuration: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
+# * AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+# * Boto Configuration: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
 #
 # ## Credits
 #
-# I would like to thank [the AWS DeepRacer Community](http://join.deepracing.io) for all the feedback about the notebooks. If you'd like, follow [my blog](https://codelikeamother.uk) where I tend to write about my experiences with AWS DeepRacer.
-#
+# * AWS DeepRacer Team for initial workbooks created for DeepRacer Workshops at Summits and re:Invent.
+# * [CodeLikeAMother](https://codelikeamother.uk) for initial rework of the notebook.
+# * [The AWS DeepRacer Community](http://join.deepracing.io) for feedback and incremental improvements.
+
 # # Log Analysis
 #
 # Let's get to it.
-#
-# ## Permissions
-#
-# Depending on where you are downloading the data from, you will need some permissions:
-# * Access to CloudWatch log streams
-# * Access to S3 bucket to reach the log files
 #
 # ## Installs and setups
 #
@@ -95,49 +79,34 @@ warnings.filterwarnings('ignore')
 
 # ## Login
 #
-# Login to AWS.
-# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account: -
+# Login to AWS. There are several ways to log in:
+# 1. On EC2 instance or Sagemaker Notebook with correct IAM execution role assigned.
+# 2. AWS credentials available in `.aws/` through using the `aws configure` command. (DeepRacer-for-Cloud's `dr-start-loganalysis` supports this)
+# 3. Setting the relevant environment variables by uncommenting the below section.
 
 # +
-#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
-#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
-#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
-#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
+# os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+# os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+# os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+# os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 # -
 
 # ## Get the logs
 #
-# Depending on which way you are training your model, you will need a slightly different way to load the data. 
+# Depending on which way you are training your model, you will need a slightly different way to load the data. The simplest way to read in training data is using the sim-trace files.
 #
-# **AWS DeepRacer Console**
-#
-# The logs can be downloaded from the training page. Once you download them, extract the archive into logs/[training-name] (just like logs/sample-logs)
-#
-# **DeepRacer for Cloud**
-#     
-# If you're using local training, just point at your model's root folder in the minio bucket. If you're using any of the cloudy deployments, download the model folder to local and point at it.
-#
-# **Deepracer for dummies/Chris Rhodes' Deepracer/ARCC Deepracer or any training solution other than the ones above, read below**
-#
-# This notebook has been updated to support the most recent setups. Most of the mentioned projects above are no longer compatible with AWS DeepRacer Console anyway so do consider moving to the ones actively maintained.
-#     
+# For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md)
+
+# + tags=["parameters"]
+PREFIX='Demo-Reinvent'      # Name of the model, without trailing '/'
+BUCKET='deepracer-local'    # Bucket name is default 'bucket' when training locally
+PROFILE=None                # The credentials profile in .aws - 'minio' for local training
+S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 
 # +
-# Specify your bucket name and prefix to load S3 logs, prefix should not including a'/' at the start or the end
-PREFIX='Demo-Reinvent'
-BUCKET='deepracer-local'
-fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX)
-
-# If you run training locally you will need to add a few parameters
-# fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile='minio', s3_endpoint_url='http://minio:9000')
-
+fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
 log = DeepRacerLog(filehandler=fh)
 log.load_training_trace()
-
-# Alternatively to load logs locally comment out above lines and uncomment out below 3 lines
-#model_logs_root = 'logs/sample-console-logs'
-#log = DeepRacerLog(model_logs_root)
-#log.load()
 
 try:
     pprint(log.agent_and_network())
@@ -146,7 +115,7 @@ try:
     print("-------------")
     pprint(log.action_space())
 except Exception:
-    print("Robomaker logs not available")
+    print("Logs not available")
 
 df = log.dataframe()
 # -

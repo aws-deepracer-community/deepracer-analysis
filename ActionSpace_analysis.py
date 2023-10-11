@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.0
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -17,13 +17,6 @@
 # This notebook has been built for the [AWS DeepRacer-Analysis](https://github.com/aws-deepracer-community/deepracer-analysis.git) 
 # provided by  the [AWS DeepRacer Community](http://join.deepracing.io).
 #
-# ## Usage
-# Copy this Notebook to "work" folder in your allready installed [AWS DeepRacer-Analysis](https://github.com/aws-deepracer-community/deepracer-analysis.git)
-#
-# **This notebook isn't complete.**
-# If you find some bugs, have problems with some tracks or something else
-# please report to @Kire in [AWS Machine Learning Community](https://aws-ml-community.slack.com) on #Slack
-#
 # ## Contributions
 # As usual, your ideas are very welcome and encouraged so if you have any suggestions either bring them
 # to [the AWS DeepRacer Community](http://join.deepracing.io) or share as code contributions.
@@ -33,6 +26,7 @@
 #
 # ## Credits
 # I would like to thank [the AWS DeepRacer Community](http://join.deepracing.io)
+
 #
 # # Log Analysis
 #
@@ -65,14 +59,16 @@ warnings.filterwarnings('ignore')
 
 # ## Login
 #
-# Login to AWS.
-# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account: -
+# Login to AWS. There are several ways to log in:
+# 1. On EC2 instance or Sagemaker Notebook with correct IAM execution role assigned.
+# 2. AWS credentials available in `.aws/` through using the `aws configure` command. (DeepRacer-for-Cloud's `dr-start-loganalysis` supports this)
+# 3. Setting the relevant environment variables by uncommenting the below section.
 
 # +
-#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
-#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
-#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
-#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
+# os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+# os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+# os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+# os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 # -
 
 # ## Load waypoints for the track you want to run analysis on
@@ -102,38 +98,20 @@ pu.plot_trackpoints(track)
 
 # ## Get the logs
 #
-# Depending on which way you are training your model, you will need a different way to load the data.
+# Depending on which way you are training your model, you will need a slightly different way to load the data. The simplest way to read in training data is using the sim-trace files directly from S3.
 #
-# **AWS DeepRacer Console**
-# The logs are being stored in CloudWatch, in group `/aws/robomaker/SimulationJobs`. You will be using boto3 to download them based on the training ID (stream name prefix). If you wish to bulk export the logs from Amazon Cloudwatch to Amazon S3 :: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/S3ExportTasks.html
-#
-# **DeepRacer for Dummies/ARCC local training**
-# Those two setups come with a container that runs Jupyter Notebook (as you noticed if you're using one of them and reading this text). Logs are stored in `/logs/` and you just need to point at the latest file to see the current training. The logs are split for long running training if they exceed 500 MB. The log loading method has been extended to support that.
-#
-# **Chris Rhodes' repo**
-# Chris repo doesn't come with logs storage out of the box. I would normally run `docker logs dr > /path/to/logfile` and then load the file.
-#
-# Below I have prepared a section for each case. In each case you can analyse the logs as the training is being run, just in case of the Console you may need to force downloading of the logs as the `cw.download_log` method has a protection against needless downloads.
-#
-# Select your preferred way to get the logs below and you can get rid of the rest.
+# For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md)
+
+# + tags=["parameters"]
+PREFIX='Demo-Reinvent'      # Name of the model, without trailing '/'
+BUCKET='deepracer-local'    # Bucket name is default 'bucket' when training locally
+PROFILE=None                # The credentials profile in .aws - 'minio' for local training
+S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 
 # +
-
-# Specify your bucket name and prefix to load S3 logs, prefix should not including a'/' at the start or the end
-PREFIX='Demo-Reinvent'
-BUCKET='deepracer-local'
-fh = S3FileHandler(bucket=BUCKET,prefix=PREFIX)
-
-# If you run training locally you will need to add a few parameters
-# fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile='minio', s3_endpoint_url='http://minio:9000')
-
+fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
 log = DeepRacerLog(filehandler=fh)
 log.load_training_trace()
-
-# Alternatively to load logs locally comment out above lines and uncomment out below 3 lines
-#model_logs_root = 'logs/sample-console-logs'
-#log = DeepRacerLog(model_logs_root)
-#log.load()
 
 try:
     pprint(log.agent_and_network())
@@ -142,9 +120,10 @@ try:
     print("-------------")
     pprint(log.action_space())
 except Exception:
-    print("Robomaker logs not available")
+    print("Logs not available")
 
 df = log.dataframe()
+
 try:
     EPISODES_PER_ITERATION=int(log.hyperparameters()['num_episodes_between_training']/(df.nunique(axis=0)['worker']))
 except Exception:
@@ -162,7 +141,6 @@ except Exception:
 # ```
 # SIM_TRACE_LOG:799,111,1.7594,4.4353,3.0875,-0.26,2.50,2,1.0000,False,True,71.5802,49,17.67,1555554451.1110387
 # ```
-# This is all that matters for us. The first two are some tests I believe and when loading they get skipped, then each next line has the following fields:
 # * episode number
 # * step number
 # * x coordinate
@@ -178,17 +156,10 @@ except Exception:
 # * closest waypoint
 # * track length
 # * timestamp
-#
-# `la.load_data` and then `la.convert_to_pandas` read it and prepare for your usage. Sorting the values may not be needed, but I have experienced under some circumstances that the log lines were not ordered properly.
 
 # +
-
-# personally I think normalizing can mask too high rewards so I am commenting it out,
-# but you might want it.
-# slio.normalize_rewards(df)
-
-#Uncomment the line of code below to evaluate a different reward function
-#nr.new_reward(df, l_center_line, 'reward.reward_sample') #, verbose=True)
+# Uncomment the line of code below to evaluate a different reward function
+# nr.new_reward(df, l_center_line, 'reward.reward_sample') #, verbose=True)
 # -
 
 simulation_agg = au.simulation_agg(df)

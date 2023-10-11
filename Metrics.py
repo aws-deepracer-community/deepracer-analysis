@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.0
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -37,52 +37,54 @@
 #
 # Boto Configuration: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
 #
-# ## Imports
+# ## Imports & Functions
 #
-# Run the imports block below:
+# Run the imports and function blocks below:
 
+# +
 from deepracer.logs import metrics
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import boto3
 
+NUM_ROUNDS=1 # default to define variable
+# -
+
+
+
 
 # ## Login
 #
-# Login to AWS.
-# Uncomment and use this section of code if the machine you're using for analysis isn't already authenticated to your AWS Account: -
+# Login to AWS. There are several ways to log in:
+# 1. On EC2 instance or Sagemaker Notebook with correct IAM execution role assigned.
+# 2. AWS credentials available in `.aws/` through using the `aws configure` command. (DeepRacer-for-Cloud's `dr-start-loganalysis` supports this)
+# 3. Setting the relevant environment variables by uncommenting the below section.
 
 # +
-#os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
-#os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
-#os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
-#os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
+# os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+# os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+# os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+# os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 # -
 
 # ## Core configuration
 
+# + tags=["parameters"]
 # For basic setup set prefix to exact S3 location.  For advanced setup set prefix without the hypen and number at the end e.g. for test-1, test-2 set prefix as test 
 PREFIX='Demo-Reinvent'
 BUCKET='deepracer-local'
-NUM_ROUNDS=1
-s3 = boto3.resource('s3')
-def get_object_count(bucket_name, folder_name):
-    bucket = s3.Bucket(bucket_name)
-    objects = bucket.objects.filter(Prefix=folder_name)
-    return sum(1 for _ in objects)
+# -
 
 # ## Loading data
 #
 # ### Basic setup
 #
-# The basic setup covers loading in data from one single prefix, but is able to detect the number of workers. Data is stored in 'real' S3.
+# The basic setup covers loading in data from one single prefix, and one single worker. 
 
-FILEPATH = PREFIX + "/metrics"
-WORKERS = get_object_count(BUCKET, FILEPATH)
-tm = metrics.TrainingMetrics(BUCKET)
-tm.addRound(model_name=PREFIX, training_round=NUM_ROUNDS, workers=WORKERS)
-rounds=np.array([[1,WORKERS],[2,WORKERS]])
+# +
+# tm = metrics.TrainingMetrics(BUCKET, model_name=PREFIX)
+# -
 
 # ### Local minio setup
 # If you run training locally you will need to add a few parameters
@@ -98,9 +100,26 @@ rounds=np.array([[1,WORKERS],[2,WORKERS]])
 # The recommended way to do this is to have a naming convention for the training sessions (e.g. MyModel-1, MyModel-2). The below loading lines require this.
 #
 
+# + tags=["parameters"]
+PROFILE="minio"
+S3_ENDPOINT_URL="http://minio:9000"
+
+# +
+FILEPATH = PREFIX + "/metrics"
+
+s3 = boto3.resource('s3')
+
+def get_object_count(bucket_name, folder_name):
+    bucket = s3.Bucket(bucket_name)
+    objects = bucket.objects.filter(Prefix=folder_name)
+    return sum(1 for _ in objects)
+
+WORKERS = get_object_count(BUCKET, FILEPATH)
+
 s3client=boto3.client('s3')
 models=s3client.list_objects(Bucket=BUCKET, Prefix=PREFIX, Delimiter='/')
 model_list=models['CommonPrefixes']
+
 list_model_workers = []
 for m in model_list:
     modle_path=m['Prefix'][:-1]
@@ -109,16 +128,18 @@ for m in model_list:
     list_model_workers.append([int(model_number), WORKERS])
 rounds=np.asarray(list_model_workers)
 
-# Load in the models. You will be given a brief statistic of what has been loaded.
-
-# +
 NUM_ROUNDS=rounds.shape[0]
-tm = metrics.TrainingMetrics(BUCKET)
-# tm = metrics.TrainingMetrics(BUCKET, profile="minio", s3_endpoint_url="http://minio:9000")
-
-for r in rounds:
-    tm.addRound('{}-{}'.format(PREFIX, r[0]), training_round=r[0], workers=r[1])
 # -
+
+# Load in the models. You will be given a brief statistic of what has been loaded. To save on bandwidth, if already loaded once, only reload last round.
+
+if 'tm' not in globals():
+    tm = metrics.TrainingMetrics(BUCKET, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
+
+    for r in rounds:
+        tm.addRound('{}-{}'.format(PREFIX, r[0]), training_round=r[0], workers=r[1])
+else:
+    tm.reloadRound('{}-{}'.format(PREFIX, rounds[-1][0]), training_round=rounds[-1][0], workers=rounds[-1][1])    
 
 # ## Analysis
 
@@ -143,7 +164,12 @@ print("Episodes: %i" % len(train))
 #
 # By altering the `rounds` parameter one can choose to not display all training rounds.
 
-tm.plotProgress(method=['median','mean','max'], rolling_average=5, figsize=(20,5), rounds=rounds[:,0])
+_ = tm.plotProgress(method=['median','mean','max'], rolling_average=5, figsize=(20,5), rounds=rounds[:,0])
+
+_ = tm.plotProgress(method=['mean'],rolling_average=20,figsize=(20,5), 
+                series=[('eval_completed','Evaluation','orange'),('train_completed','Training','blue')], 
+                title="Percent completed laps ({}).", 
+                ylabel="Percent", completedLapsOnly=False, grid=True)
 
 # ### Best laps
 #
@@ -158,6 +184,11 @@ display(eval_complete_lr.nsmallest(5,['time']))
 # ### Best lap progression
 #
 # The below plot will show how the best laps for training and evaluation changes over time. This is useful to see if your model gets faster over time.
+
+_ = tm.plotProgress(method=['min','mean'],rolling_average=15, figsize=(20,5), 
+                series=[('eval_time','Evaluation','orange'),('train_time','Training','blue')], 
+                title="Laptime for completed laps ({}).", 
+                ylabel="Laptime", completedLapsOnly=True, grid=True)
 
 plt.figure(figsize=(15,5))
 plt.title('Best lap progression')
