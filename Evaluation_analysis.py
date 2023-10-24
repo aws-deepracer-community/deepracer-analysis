@@ -163,7 +163,6 @@ except Exception as e:
 track: Track = tu.load_track(track_name)
 
 pu.plot_trackpoints(track)
-# -
 
 # +
 simulation_agg = au.simulation_agg(df, 'stream', is_eval=True)
