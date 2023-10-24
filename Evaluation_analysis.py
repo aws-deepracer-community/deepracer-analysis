@@ -103,6 +103,32 @@ warnings.filterwarnings('ignore')
 # os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 # -
 
+# ## Load all race submission logs
+#
+# **WARNING:** If you do not specify `not_older_than` parameter, all evaluation logs will be downloaded. They aren't as big as the training logs, but there is a lot of them.
+#
+# That said you can download all and then it will only download new ones unless you use force=True.
+#
+# There are also `not_older_than` and `older_than` parameters so you can choose to fetch all logs from a given period and compare them against each other. Just remember memory is finite.
+#
+# As mentioned, this method always fetches a list of log streams and then downloads only ones that haven't been downloaded just yet. You can therefore use it to fetch that list and load all the files from the path provided.
+# ## Get the logs
+#
+# Depending on which way you are evaluating your model, you will need a slightly different way to load the data. The simplest way to read in evaluation data is using the sim-trace files.
+#
+# For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md)
+
+# +
+PREFIX='Demo-Reinvent'      # Name of the model, without trailing '/'
+BUCKET='deepracer-local'    # Bucket name is default 'bucket' when training locally
+PROFILE=None                # The credentials profile in .aws - 'minio' for local training
+S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
+
+fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
+drl = DeepRacerLog(filehandler=fh)
+drl.load_evaluation_trace()
+df = drl.dataframe()
+
 # ## Load waypoints for the track you want to run analysis on
 #
 # The track waypoint files represent the coordinates of characteristic points of the track - the center line, inside border and outside border. Their main purpose is to visualise the track in images below.
@@ -138,32 +164,6 @@ track: Track = tu.load_track(track_name)
 
 pu.plot_trackpoints(track)
 # -
-
-# ## Load all race submission logs
-#
-# **WARNING:** If you do not specify `not_older_than` parameter, all evaluation logs will be downloaded. They aren't as big as the training logs, but there is a lot of them.
-#
-# That said you can download all and then it will only download new ones unless you use force=True.
-#
-# There are also `not_older_than` and `older_than` parameters so you can choose to fetch all logs from a given period and compare them against each other. Just remember memory is finite.
-#
-# As mentioned, this method always fetches a list of log streams and then downloads only ones that haven't been downloaded just yet. You can therefore use it to fetch that list and load all the files from the path provided.
-# ## Get the logs
-#
-# Depending on which way you are evaluating your model, you will need a slightly different way to load the data. The simplest way to read in evaluation data is using the sim-trace files.
-#
-# For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md)
-
-# +
-PREFIX='Demo-Reinvent'      # Name of the model, without trailing '/'
-BUCKET='deepracer-local'    # Bucket name is default 'bucket' when training locally
-PROFILE=None                # The credentials profile in .aws - 'minio' for local training
-S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
-
-fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
-drl = DeepRacerLog(filehandler=fh)
-drl.load_evaluation_trace()
-df = drl.dataframe()
 
 # +
 simulation_agg = au.simulation_agg(df, 'stream', is_eval=True)
