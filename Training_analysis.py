@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.0
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -70,7 +70,7 @@ from deepracer.logs import \
     PlottingUtils as pu, \
     ActionBreakdownUtils as abu, \
     DeepRacerLog, \
-    S3FileHandler
+    S3FileHandler, FSFileHandler
 
 # Ignore deprecation warnings we have no power over
 import warnings
@@ -95,18 +95,25 @@ warnings.filterwarnings('ignore')
 #
 # Depending on which way you are training your model, you will need a slightly different way to load the data. The simplest way to read in training data is using the sim-trace files.
 #
-# For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md)
+# For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md).
 
 # + tags=["parameters"]
-PREFIX='Demo-Reinvent'      # Name of the model, without trailing '/'
-BUCKET='deepracer-local'    # Bucket name is default 'bucket' when training locally
-PROFILE=None                # The credentials profile in .aws - 'minio' for local training
-S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
+PREFIX='model-name'   # Name of the model, without trailing '/'
+BUCKET='bucket'       # Bucket name is default 'bucket' when training locally
+PROFILE=None          # The credentials profile in .aws - 'minio' for local training
+S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
+# -
 
-# +
 fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
 log = DeepRacerLog(filehandler=fh)
 log.load_training_trace()
+
+# +
+# # Example / Alternative for logs on file-system
+# fh = FSFileHandler(model_folder='logs/sample-console-logs', robomaker_log_path='logs/sample-console-logs/logs/training/training-20220611230353-EHNgTNY2T9-77qXhqjBi6A-robomaker.log')
+# log = DeepRacerLog(filehandler=fh)
+# log.load_robomaker_logs()
+# -
 
 try:
     pprint(log.agent_and_network())
@@ -118,7 +125,6 @@ except Exception:
     print("Logs not available")
 
 df = log.dataframe()
-# -
 
 # If the code above worked, you will see a list of details printed above: a bit about the agent and the network, a bit about the hyperparameters and some information about the action space. Now let's see what got loaded into the dataframe - the data structure holding your simulation information. the `head()` method prints out a few first lines of the data:
 
@@ -203,7 +209,6 @@ pu.plot_trackpoints(track)
 # The higher the value, the more stable the model is on a given track.
 
 # +
-
 simulation_agg = au.simulation_agg(df)
 try: 
     if df.nunique(axis=0)['worker'] > 1:
@@ -421,9 +426,3 @@ track_breakdown.keys()
 # **Note: does not work for continuous action space (yet).** 
 
 abu.action_breakdown(df, track, track_breakdown=track_breakdown.get('reinvent2018'), episode_ids=[12])
-
-
-
-
-
-
