@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.0
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -81,7 +81,7 @@ from deepracer.logs import \
     EvaluationUtils as eu, \
     PlottingUtils as pu, \
     DeepRacerLog, \
-    S3FileHandler, \
+    S3FileHandler, FSFileHandler, \
     LogType
 
 # Ignore deprecation warnings we have no power over
@@ -118,19 +118,25 @@ warnings.filterwarnings('ignore')
 #
 # For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md)
 
-# +
 PREFIX='Demo-Reinvent'      # Name of the model, without trailing '/'
 BUCKET='deepracer-local'    # Bucket name is default 'bucket' when training locally
 PROFILE=None                # The credentials profile in .aws - 'minio' for local training
 S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 
 fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
-drl = DeepRacerLog(filehandler=fh)
-drl.load_evaluation_trace()
-df = drl.dataframe()
+log = DeepRacerLog(filehandler=fh)
+log.load_evaluation_trace()
+
+# +
+# # Example / Alternative for logs on file-system
+# fh = FSFileHandler(model_folder='logs/sample-console-logs')
+# log = DeepRacerLog(filehandler=fh)
+# log.load_robomaker_logs(type=LogType.EVALUATION)
+# -
+
+df = log.dataframe()
 
 # ## Load waypoints for the track you want to run analysis on
-#
 # The track waypoint files represent the coordinates of characteristic points of the track - the center line, inside border and outside border. Their main purpose is to visualise the track in images below.
 #
 # The naming of the tracks is not super consistent. The ones that we already know have been mapped to their official names in the track_meta dictionary.
@@ -199,13 +205,9 @@ pu.plot_evaluations(df, track)
 #
 # This place is a great chance to learn more about [Pandas](https://pandas.pydata.org/pandas-docs/stable/) and about how to process data series.
 
-# +
 # Load a single lap
-STREAM='' #ID of the stream you want to view, can be seen in tables above
-EPISODE=0 #ID of the episode you want to view, can be seen in tables above
-
-lap_df = df[(df['episode']==EPISODE) & (df['stream']==STREAM)]
-# -
+fastest = complete_ones.nsmallest(1, 'time')[['stream','episode']][0:1]
+lap_df = df[(df['episode']==fastest.iloc[0,1]) & (df['stream']==fastest.iloc[0,0])]
 
 # We're adding a lot of columns here to the episode. To speed things up, it's only done per a single episode, so others will currently be missing this information.
 #
