@@ -50,10 +50,6 @@ import boto3
 
 NUM_ROUNDS=1 # default to define variable
 # -
-
-
-
-
 # ## Login
 #
 # Login to AWS. There are several ways to log in:
@@ -72,8 +68,10 @@ NUM_ROUNDS=1 # default to define variable
 
 # + tags=["parameters"]
 # For basic setup set prefix to exact S3 location.  For advanced setup set prefix without the hypen and number at the end e.g. for test-1, test-2 set prefix as test 
-PREFIX='Demo-Reinvent'
-BUCKET='deepracer-local'
+PREFIX='model-name'   # Name of the model, without trailing '/'
+BUCKET='bucket'       # Bucket name is default 'bucket' when training locally
+PROFILE=None          # The credentials profile in .aws - 'minio' for local training
+S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 # -
 
 # ## Loading data
@@ -82,15 +80,11 @@ BUCKET='deepracer-local'
 #
 # The basic setup covers loading in data from one single prefix, and one single worker. 
 
-# +
-# tm = metrics.TrainingMetrics(BUCKET, model_name=PREFIX)
-# -
-
-# ### Local minio setup
-# If you run training locally you will need to add a few parameters
+tm = metrics.TrainingMetrics(BUCKET, model_name=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
 
 # +
-# tm = metrics.TrainingMetrics(BUCKET, model_name=PREFIX, profile='minio', s3_endpoint_url='http://minio:9000')
+# # Alternative from file
+# tm = metrics.TrainingMetrics(None, fname='logs/sample-console-logs/metrics/training/training-20220611205309-EHNgTNY2T9-77qXhqjBi6A.json')
 # -
 
 # ### Advanced setup
@@ -100,46 +94,22 @@ BUCKET='deepracer-local'
 # The recommended way to do this is to have a naming convention for the training sessions (e.g. MyModel-1, MyModel-2). The below loading lines require this.
 #
 
-# + tags=["parameters"]
-PROFILE="minio"
-S3_ENDPOINT_URL="http://minio:9000"
-
 # +
-FILEPATH = PREFIX + "/metrics"
-
-s3 = boto3.resource('s3')
-
-def get_object_count(bucket_name, folder_name):
-    bucket = s3.Bucket(bucket_name)
-    objects = bucket.objects.filter(Prefix=folder_name)
-    return sum(1 for _ in objects)
-
-WORKERS = get_object_count(BUCKET, FILEPATH)
-
-s3client=boto3.client('s3')
-models=s3client.list_objects(Bucket=BUCKET, Prefix=PREFIX, Delimiter='/')
-model_list=models['CommonPrefixes']
-
-list_model_workers = []
-for m in model_list:
-    modle_path=m['Prefix'][:-1]
-    model_number=modle_path[len(modle_path)-1]
-    WORKERS = get_object_count(BUCKET, PREFIX + "-" + model_number + "/metrics")
-    list_model_workers.append([int(model_number), WORKERS])
-rounds=np.asarray(list_model_workers)
-
-NUM_ROUNDS=rounds.shape[0]
+# rounds=np.array([[1,2],[2,2]])
+# NUM_ROUNDS=rounds.shape[0]
 # -
 
 # Load in the models. You will be given a brief statistic of what has been loaded. To save on bandwidth, if already loaded once, only reload last round.
 
-if 'tm' not in globals():
-    tm = metrics.TrainingMetrics(BUCKET, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
-
-    for r in rounds:
-        tm.addRound('{}-{}'.format(PREFIX, r[0]), training_round=r[0], workers=r[1])
-else:
-    tm.reloadRound('{}-{}'.format(PREFIX, rounds[-1][0]), training_round=rounds[-1][0], workers=rounds[-1][1])    
+# +
+# if 'tm' not in globals():
+#     tm = metrics.TrainingMetrics(BUCKET, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
+#
+#    for r in rounds:
+#        tm.addRound('{}-{}'.format(PREFIX, r[0]), training_round=r[0], workers=r[1])
+# else:
+#    tm.reloadRound('{}-{}'.format(PREFIX, rounds[-1][0]), training_round=rounds[-1][0], workers=rounds[-1][1])    
+# -
 
 # ## Analysis
 
@@ -164,7 +134,7 @@ print("Episodes: %i" % len(train))
 #
 # By altering the `rounds` parameter one can choose to not display all training rounds.
 
-_ = tm.plotProgress(method=['median','mean','max'], rolling_average=5, figsize=(20,5), rounds=rounds[:,0])
+_ = tm.plotProgress(method=['median','mean','max'], rolling_average=5, figsize=(20,5))
 
 _ = tm.plotProgress(method=['mean'],rolling_average=20,figsize=(20,5), 
                 series=[('eval_completed','Evaluation','orange'),('train_completed','Training','blue')], 
@@ -207,3 +177,5 @@ eval_r = ev[ev['round']==NUM_ROUNDS]
 plt.scatter(train_r['episode'],train_r['completion'],alpha=0.5)
 plt.scatter(eval_r['episode'],eval_r['completion'],c='orange',alpha=0.5)
 plt.show()
+
+
