@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -15,17 +15,7 @@
 
 # # Training analysis for DeepRacer
 #
-# This notebook has been built based on the `DeepRacer Log Analysis.ipynb` provided by the AWS DeepRacer Team. It has been reorganised and expanded to provide new views on the training data without the helper code which was moved into utility `.py` files.
-#
-# ## Usage
-#
-# I have expanded this notebook from to present how I'm using this information. It contains descriptions that you may find not that needed after initial reading. Since this file can change in the future, I recommend that you make its copy and reorganize it to your liking. This way you will not lose your changes and you'll be able to add things as you please.
-#
-# **This notebook isn't complete.** What I find interesting in the logs may not be what you will find interesting and useful. I recommend you get familiar with the tools and try hacking around to get the insights that suit your needs.
-#
-# ## Contributions
-#
-# As usual, your ideas are very welcome and encouraged so if you have any suggestions either bring them to [the AWS DeepRacer Community](http://join.deepracing.io) or share as code contributions.
+# This notebook has been built based on the `DeepRacer Log Analysis.ipynb` provided by the AWS DeepRacer Team. It has been reorganised and expanded to provide new views on the training data without the helper code which was moved into the [`deepracer-utils` library](https://github.com/aws-deepracer-community/deepracer-utils).
 #
 # ## Training environments
 #
@@ -36,24 +26,18 @@
 # Before you start using the notebook, you will need to install some dependencies. If you haven't yet done so, have a look at [The README.md file](/edit/README.md#running-the-notebooks) to find what you need to install.
 #
 # Apart from the install, you also have to configure your programmatic access to AWS. Have a look at the guides below, AWS resources will lead you by the hand:
-#
-# AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
-#
-# Boto Configuration: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
+# * AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+# * Boto Configuration: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
 #
 # ## Credits
 #
-# I would like to thank [the AWS DeepRacer Community](http://join.deepracing.io) for all the feedback about the notebooks. If you'd like, follow [my blog](https://codelikeamother.uk) where I tend to write about my experiences with AWS DeepRacer.
-#
+# * AWS DeepRacer Team for initial workbooks created for DeepRacer Workshops at Summits and re:Invent.
+# * [CodeLikeAMother](https://codelikeamother.uk) for initial rework of the notebook.
+# * [The AWS DeepRacer Community](http://join.deepracing.io) for feedback and incremental improvements.
+
 # # Log Analysis
 #
 # Let's get to it.
-#
-# ## Permissions
-#
-# Depending on where you are downloading the data from, you will need some permissions:
-# * Access to CloudWatch log streams
-# * Access to S3 bucket to reach the log files
 #
 # ## Installs and setups
 #
@@ -75,6 +59,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
+import os
 
 from deepracer.tracks import TrackIO, Track
 from deepracer.tracks.track_utils import track_breakdown, track_meta
@@ -84,37 +69,51 @@ from deepracer.logs import \
     AnalysisUtils as au, \
     PlottingUtils as pu, \
     ActionBreakdownUtils as abu, \
-    DeepRacerLog
+    DeepRacerLog, \
+    S3FileHandler, FSFileHandler
 
 # Ignore deprecation warnings we have no power over
 import warnings
 warnings.filterwarnings('ignore')
 # -
 
+# ## Login
+#
+# Login to AWS. There are several ways to log in:
+# 1. On EC2 instance or Sagemaker Notebook with correct IAM execution role assigned.
+# 2. AWS credentials available in `.aws/` through using the `aws configure` command. (DeepRacer-for-Cloud's `dr-start-loganalysis` supports this)
+# 3. Setting the relevant environment variables by uncommenting the below section.
+
+# +
+# os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+# os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+# os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+# os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
+# -
 
 # ## Get the logs
 #
-# Depending on which way you are training your model, you will need a slightly different way to load the data. 
+# Depending on which way you are training your model, you will need a slightly different way to load the data. The simplest way to read in training data is using the sim-trace files.
 #
-# **AWS DeepRacer Console**
-#
-# The logs can be downloaded from the training page. Once you download them, extract the archive into logs/[training-name] (just like logs/sample-logs)
-#
-# **DeepRacer for Cloud**
-#     
-# If you're using local training, just point at your model's root folder in the minio bucket. If you're using any of the cloudy deployments, download the model folder to local and point at it.
-#
-# **Deepracer for dummies/Chris Rhodes' Deepracer/ARCC Deepracer or any training solution other than the ones above, read below**
-#
-# This notebook has been updated to support the most recent setups. Most of the mentioned projects above are no longer compatible with AWS DeepRacer Console anyway so do consider moving to the ones actively maintained.
-#     
+# For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md).
+
+# + tags=["parameters"]
+PREFIX='model-name'   # Name of the model, without trailing '/'
+BUCKET='bucket'       # Bucket name is default 'bucket' when training locally
+PROFILE=None          # The credentials profile in .aws - 'minio' for local training
+S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
+# -
+
+fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
+log = DeepRacerLog(filehandler=fh)
+log.load_training_trace()
 
 # +
-model_logs_root = 'logs/sample-console-logs'
-log = DeepRacerLog(model_logs_root)
-
-# load logs into a dataframe
-log.load()
+# # Example / Alternative for logs on file-system
+# fh = FSFileHandler(model_folder='logs/sample-console-logs', robomaker_log_path='logs/sample-console-logs/logs/training/training-20220611230353-EHNgTNY2T9-77qXhqjBi6A-robomaker.log')
+# log = DeepRacerLog(filehandler=fh)
+# log.load_robomaker_logs()
+# -
 
 try:
     pprint(log.agent_and_network())
@@ -123,10 +122,9 @@ try:
     print("-------------")
     pprint(log.action_space())
 except Exception:
-    print("Robomaker logs not available")
+    print("Logs not available")
 
 df = log.dataframe()
-# -
 
 # If the code above worked, you will see a list of details printed above: a bit about the agent and the network, a bit about the hyperparameters and some information about the action space. Now let's see what got loaded into the dataframe - the data structure holding your simulation information. the `head()` method prints out a few first lines of the data:
 
@@ -198,7 +196,7 @@ pu.plot_trackpoints(track)
 #
 # #### Total reward per episode
 #
-# This graph has been taken from the orignal notebook and can show progress on certain groups of behaviours. It usually forms something like a triangle, sometimes you can see a clear line of progress that shows some new way has been first taught and then perfected.
+# This graph has been taken from the original notebook and can show progress on certain groups of behaviours. It usually forms something like a triangle, sometimes you can see a clear line of progress that shows some new way has been first taught and then perfected.
 #
 # #### Mean completed lap times per iteration
 #
@@ -206,12 +204,18 @@ pu.plot_trackpoints(track)
 #
 # #### Completion rate per iteration
 #
-# It represents how big part of all episodes in an iteration is full laps. The value is from range [0, 1] and is a result of deviding amount of full laps in iteration by amount of all episodes in iteration. I say it has to go in pair with the previous one because you not only need a fast lapper, you also want a race completer.
+# It represents how big part of all episodes in an iteration is full laps. The value is from range [0, 1] and is a result of dividing amount of full laps in iteration by amount of all episodes in iteration. I say it has to go in pair with the previous one because you not only need a fast lapper, you also want a race completer.
 #
 # The higher the value, the more stable the model is on a given track.
 
 # +
 simulation_agg = au.simulation_agg(df)
+try: 
+    if df.nunique(axis=0)['worker'] > 1:
+        print("Multiple workers have been detected, reloading data with grouping by unique_episode")
+        simulation_agg = au.simulation_agg(df, secondgroup="unique_episode")
+except:
+    print("Multiple workers not detected, assuming 1 worker")
 
 au.analyze_training_progress(simulation_agg, title='Training progress')
 # -
@@ -340,7 +344,14 @@ else:
 # highest progress from all episodes:
 episodes_to_plot = simulation_agg.nlargest(3,'progress')
 
-pu.plot_selected_laps(episodes_to_plot, df, track)
+try:
+    if df.nunique(axis=0)['worker'] > 1:
+        pu.plot_selected_laps(episodes_to_plot, df, track, section_to_plot="unique_episode")
+    else:
+        pu.plot_selected_laps(episodes_to_plot, df, track)
+except:
+    print("Multiple workers not detected, assuming 1 worker")
+    pu.plot_selected_laps(episodes_to_plot, df, track)
 # -
 # ### Plot a heatmap of rewards for current training. 
 # The brighter the colour, the higher the reward granted in given coordinates.
@@ -379,11 +390,16 @@ pu.plot_track(df[df['iteration'] == iteration_id], track)
 
 # ### Path taken in a particular episode
 
-# +
 episode_id = 12
 
-pu.plot_selected_laps([episode_id], df, track)
-# -
+try:
+    if df.nunique(axis=0)['worker'] > 1:
+        pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
+    else: 
+        pu.plot_selected_laps([episode_id], df, track)
+except:
+    print("Multiple workers not detected, assuming 1 worker")
+    pu.plot_selected_laps([episode_id], df, track)
 
 # ### Path taken in a particular iteration
 
@@ -410,9 +426,3 @@ track_breakdown.keys()
 # **Note: does not work for continuous action space (yet).** 
 
 abu.action_breakdown(df, track, track_breakdown=track_breakdown.get('reinvent2018'), episode_ids=[12])
-
-
-
-
-
-

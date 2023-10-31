@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -55,39 +55,52 @@
 #
 # Let's get to it.
 #
+# ## Installs and setups
+#
+# If you are using an AWS SageMaker Notebook to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
+
+# +
+# Make sure you have deepracer-utils >= 0.9
+
+# import sys
+
+# # !{sys.executable} -m pip install --upgrade deepracer-utils
+# -
+
 # ## Imports
 #
 # Run the imports block below:
 
 # +
 from deepracer.tracks import TrackIO, Track
+from deepracer.tracks.track_utils import track_meta
 
 from deepracer.logs import \
     AnalysisUtils as au, \
     SimulationLogsIO as slio, \
     EvaluationUtils as eu, \
-    PlottingUtils as pu
+    PlottingUtils as pu, \
+    DeepRacerLog, \
+    S3FileHandler, FSFileHandler, \
+    LogType
 
 # Ignore deprecation warnings we have no power over
 import warnings
 warnings.filterwarnings('ignore')
 # -
 
-# ## Load waypoints for the track you want to run analysis on
+# ## Login
 #
-# You will notice files for racing tracks. They are community best-effort versions made to make the visualisation in the logs less confusing. They may be slightly differing from reality, we don't know for sure. We do not have access to actual npy files that AWS use in the league.
-#
-# Tracks Available:
+# Login to AWS. There are several ways to log in:
+# 1. On EC2 instance or Sagemaker Notebook with correct IAM execution role assigned.
+# 2. AWS credentials available in `.aws/` through using the `aws configure` command. (DeepRacer-for-Cloud's `dr-start-loganalysis` supports this)
+# 3. Setting the relevant environment variables by uncommenting the below section.
 
 # +
-# !ls tracks/
-
-tu = TrackIO()
-
-# +
-track: Track = tu.load_track("reinvent_base")
-
-track.road_poly
+# os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+# os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+# os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+# os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 # -
 
 # ## Load all race submission logs
@@ -99,27 +112,66 @@ track.road_poly
 # There are also `not_older_than` and `older_than` parameters so you can choose to fetch all logs from a given period and compare them against each other. Just remember memory is finite.
 #
 # As mentioned, this method always fetches a list of log streams and then downloads only ones that haven't been downloaded just yet. You can therefore use it to fetch that list and load all the files from the path provided.
+# ## Get the logs
 #
-# Side note: if you want to download evaluation logs from AWS DeepRacer Console, this will be a bit more tricky. Evaluation logs are grouped together with training logs in same group `/aws/robomaker/SimulationJobs` and there isn't an obvious way to recognise which ones they are. That said, in `Evaluation Run Analysis` section below you have the ability to download a single evaluation file.
+# Depending on which way you are evaluating your model, you will need a slightly different way to load the data. The simplest way to read in evaluation data is using the sim-trace files.
+#
+# For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md)
 
-# For the purpose of generating the notebook in a reproducible way
-# logs download has been commented out.
-logs = [['logs/sample-console-logs/logs/evaluation/evaluation-20220612082853-IBZwYd0MRMqgwKlAe7bb0A-robomaker.log', '20220612082853'],
-       ['logs/sample-console-logs/logs/evaluation/evaluation-20220612083839-PMfF__s5QJSQT_-E0rEYwg-robomaker.log', '20220612083839']]
+PREFIX='Demo-Reinvent'      # Name of the model, without trailing '/'
+BUCKET='deepracer-local'    # Bucket name is default 'bucket' when training locally
+PROFILE=None                # The credentials profile in .aws - 'minio' for local training
+S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 
-# Loads all the logs from the above time range
-bulk = slio.load_a_list_of_logs(logs)
-
-# ## Parse logs and visualize
-#
-# You will notice in here that reward graps are missing, as are many others from the training. These have been trimmed down for clarity.
-#
-# Do not get tricked though - this notebook provides features that the training one doesn't have, such as batch visualisation of race submission laps.
-#
-# Side note: Evaluation/race logs contain a reward field but it's not connected to your reward. It is there most likely to ensure logs have consistent structure to make their parsing easier. The value appears to be dependand on distance of the car from the centre of the track. As such it provides no value and is not visualised in this notebook.
+fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
+log = DeepRacerLog(filehandler=fh)
+log.load_evaluation_trace()
 
 # +
-simulation_agg = au.simulation_agg(bulk, 'stream', is_eval=True)
+# # Example / Alternative for logs on file-system
+# fh = FSFileHandler(model_folder='logs/sample-console-logs')
+# log = DeepRacerLog(filehandler=fh)
+# log.load_robomaker_logs(type=LogType.EVALUATION)
+# -
+
+df = log.dataframe()
+
+# ## Load waypoints for the track you want to run analysis on
+# The track waypoint files represent the coordinates of characteristic points of the track - the center line, inside border and outside border. Their main purpose is to visualise the track in images below.
+#
+# The naming of the tracks is not super consistent. The ones that we already know have been mapped to their official names in the track_meta dictionary.
+#
+# Some npy files have an 'Eval' suffix. One of the challenges in the past was that the evaluation tracks were different to physical tracks and we have recreated them to enable evaluation. Remeber that evaluation npy files are a community effort to visualise the tracks in the trainings, they aren't 100% accurate.
+#
+# Tracks Available:
+
+# +
+# !ls tracks/
+
+tu = TrackIO()
+
+for track in tu.get_tracks():
+    print("{} - {}".format(track, track_meta.get(track[:-4], "I don't know")))
+# -
+
+# Now let's load the track:
+
+# +
+# We will try to guess the track name first, if it 
+# fails, we'll use the constant in quotes
+
+try:
+    track_name = log.agent_and_network()["world"]
+except Exception as e:
+    track_name = "reinvent_base"
+
+
+track: Track = tu.load_track(track_name)
+
+pu.plot_trackpoints(track)
+
+# +
+simulation_agg = au.simulation_agg(df, 'stream', is_eval=True)
 complete_ones = simulation_agg[simulation_agg['progress']==100]
 
 # This gives the warning about ptp method deprecation. The code looks as if np.ptp was used, I don't know how to fix it.
@@ -146,7 +198,7 @@ complete_ones.nsmallest(15, 'time')
 #
 # If you want to plot a single lap, scroll down for an example which lets you do a couple more tricks.
 
-pu.plot_evaluations(bulk, track)
+pu.plot_evaluations(df, track)
 
 # ## Single lap
 # Below you will find some ideas of looking at a single evaluation lap. You may be interested in a specific part of it. This isn't very robust but can work as a starting point. Please submit your ideas for analysis.
@@ -154,7 +206,8 @@ pu.plot_evaluations(bulk, track)
 # This place is a great chance to learn more about [Pandas](https://pandas.pydata.org/pandas-docs/stable/) and about how to process data series.
 
 # Load a single lap
-lap_df = bulk[(bulk['episode']==0) & (bulk['stream']==logs[0][1])]
+fastest = complete_ones.nsmallest(1, 'time')[['stream','episode']][0:1]
+lap_df = df[(df['episode']==fastest.iloc[0,1]) & (df['stream']==fastest.iloc[0,0])]
 
 # We're adding a lot of columns here to the episode. To speed things up, it's only done per a single episode, so others will currently be missing this information.
 #
@@ -169,3 +222,6 @@ lap_df.loc[:,'progress_delta']=lap_df['progress'].astype(float)-lap_df['progress
 lap_df.loc[:,'progress_delta_per_time']=lap_df['progress_delta']/lap_df['time']
 
 pu.plot_grid_world(lap_df, track, graphed_value='reward')
+# -
+
+

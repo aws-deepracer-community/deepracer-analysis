@@ -1,4 +1,4 @@
-FROM jupyter/minimal-notebook:python-3.7
+FROM jupyter/minimal-notebook:python-3.9
 
 COPY ./requirements.txt /tmp/
 RUN pip install --requirement /tmp/requirements.txt && \
