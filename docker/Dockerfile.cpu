@@ -1,4 +1,7 @@
-FROM  python:3.7.6-slim
+FROM  ubuntu:20.04
+
+ENV TZ="America/New_York" 
+ENV DEBIAN_FRONTEND="noninteractive" 
 
 LABEL maintainer="AWS Deepracer Community" \
 	  description="Log Analysis for DeepRacer" \
@@ -6,7 +9,7 @@ LABEL maintainer="AWS Deepracer Community" \
 
 # Container Dependency Setup
 RUN apt-get update && apt-get upgrade -y && \ 
-	apt-get install --no-install-recommends software-properties-common libsm6 libxext6 libxrender-dev git wget python3-pip python3-setuptools awscli  -y && \
+	apt-get install --no-install-recommends software-properties-common freeglut libsm6 libxext6 libxrender-dev git wget python3 python3-pip python3-setuptools awscli  -y && \
 	apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
