@@ -51,7 +51,6 @@ import matplotlib.pyplot as plt
 
 import cv2
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 from tensorflow.compat.v1.io.gfile import GFile
@@ -97,7 +96,7 @@ for n in iterations:
 display(models_file_path)
 
 for model_file in models_file_path:
-    model, obs, model_out = load_session(model_file, my_sensor)
+    model, obs, model_out = load_session(model_file, my_sensor, False)
     arr = []
     for f in picture_files[:]:
         img = cv2.imread(f)
@@ -144,7 +143,7 @@ heatmaps = []
 view_models = models_file_path[1:3]
 
 for model_file in view_models:
-    model, obs, model_out = load_session(model_file, my_sensor)
+    model, obs, model_out = load_session(model_file, my_sensor, False)
     arr = []
     for f in picture_files:
         img = cv2.imread(f)
