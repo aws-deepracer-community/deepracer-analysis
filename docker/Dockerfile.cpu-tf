@@ -1,4 +1,7 @@
-FROM  python:3.7.6-slim
+FROM  ubuntu:20.04
+
+ENV TZ="America/New_York" 
+ENV DEBIAN_FRONTEND="noninteractive" 
 
 LABEL maintainer="AWS Deepracer Community" \
 	  description="Log Analysis for DeepRacer" \
@@ -14,10 +17,10 @@ RUN mkdir -p /workspace/analysis
 
 # Install common pip packages
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt && rm /workspace/requirements.txt
+RUN pip install -U --no-cache-dir -r requirements.txt && rm /workspace/requirements.txt
 
 # Install tensorflow and visualization
-RUN pip install --no-cache-dir opencv-python tensorflow==1.15.4 python-resize-image
+RUN pip install -U --no-cache-dir opencv-python python-resize-image tensorflow
 
 #Copy the files
 COPY *.ipynb /workspace/

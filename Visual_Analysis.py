@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.10.2
+#       jupytext_version: 1.16.0
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -40,7 +40,7 @@
 #
 # Run the imports block below:
 
-# + tags=[]
+# +
 import json
 import os
 import glob
@@ -51,8 +51,9 @@ import matplotlib.pyplot as plt
 
 import cv2
 
-import tensorflow as tf
-from tensorflow.gfile import GFile
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+from tensorflow.compat.v1.io.gfile import GFile
 
 from deepracer.model import load_session, visualize_gradcam_discrete_ppo, rgb2gray
 # -
@@ -95,7 +96,7 @@ for n in iterations:
 display(models_file_path)
 
 for model_file in models_file_path:
-    model, obs, model_out = load_session(model_file, my_sensor)
+    model, obs, model_out = load_session(model_file, my_sensor, False)
     arr = []
     for f in picture_files[:]:
         img = cv2.imread(f)
@@ -116,7 +117,6 @@ for model_file in models_file_path:
 #
 # We will now show the probabilities per action for the selected picture and iterations. The higher the probability of one single action the more mature is the model. Comparing different models enables the developer to see how the model is becoming more certain over time.
 
-# + tags=[]
 PICTURE_INDEX=1
 display(picture_files[PICTURE_INDEX])
 
@@ -143,7 +143,7 @@ heatmaps = []
 view_models = models_file_path[1:3]
 
 for model_file in view_models:
-    model, obs, model_out = load_session(model_file, my_sensor)
+    model, obs, model_out = load_session(model_file, my_sensor, False)
     arr = []
     for f in picture_files:
         img = cv2.imread(f)
