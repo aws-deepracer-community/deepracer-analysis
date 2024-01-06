@@ -22,9 +22,6 @@ RUN pip install -U --no-cache-dir -r requirements.txt && rm /workspace/requireme
 # Install tensorflow and visualization
 RUN pip install -U --no-cache-dir opencv-python python-resize-image tensorflow
 
-# Install Deepracer-viz
-# RUN git clone -b v2 https://github.com/jochem725/deepracer-viz/ && cd deepracer-viz && python3 setup.py sdist && pip3 install --no-deps dist/* && cd .. && rm -rf deepracer-viz
-
 #Copy the files
 COPY *.ipynb /workspace/
 ADD tracks /workspace/tracks
