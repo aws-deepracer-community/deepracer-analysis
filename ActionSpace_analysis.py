@@ -218,7 +218,7 @@ class act(object):
 
 maxThrottle = df.speed.max()
 
-AS = df[df['steps'] != 0].groupby(['action'], as_index=False)['steering_angle','speed'].median()
+AS = df[df['steps'] != 0].groupby(['action'], as_index=False)[['steering_angle','speed']].median()
 asl = [None] * AS.shape[0]
 for i in range(0,AS.shape[0]):
     j = AS.action[i].astype(int)
