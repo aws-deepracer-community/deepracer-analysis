@@ -84,6 +84,8 @@ from deepracer.logs import \
     S3FileHandler, FSFileHandler, \
     LogType
 
+import os
+
 # Ignore deprecation warnings we have no power over
 import warnings
 warnings.filterwarnings('ignore')
