@@ -50,6 +50,7 @@ from deepracer.logs import \
     AnalysisUtils as au, \
     DeepRacerLog, \
     S3FileHandler
+
 import os
 
 # Ignore deprecation warnings we have no power over
