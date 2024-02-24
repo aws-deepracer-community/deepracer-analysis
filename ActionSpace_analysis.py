@@ -50,6 +50,7 @@ from deepracer.logs import \
     AnalysisUtils as au, \
     DeepRacerLog, \
     S3FileHandler
+
 import os
 
 # Ignore deprecation warnings we have no power over
@@ -109,7 +110,7 @@ PROFILE=None                # The credentials profile in .aws - 'minio' for loca
 S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 
 # +
-fh = S3FileHandler(bucket=BUCKET, model_name=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
+fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
 log = DeepRacerLog(filehandler=fh)
 log.load_training_trace()
 
