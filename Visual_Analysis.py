@@ -35,6 +35,20 @@
 # Before you start using the notebook, you will need to install some dependencies. If you haven't yet done so, have a look at [The README.md file](/edit/README.md#running-the-notebooks) to find what you need to install.
 #
 # This workbook will require `tensorflow` and `cv2` to work.
+
+#
+# ## Installs and setups
+#
+# If you are using an AWS SageMaker Notebook or Sagemaker Studio Lab to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
+
+# +
+# Make sure you have the required pre-reqs
+
+# import sys
+
+# # !{sys.executable} -m pip install --upgrade -r requirements.txt
+# -
+
 #
 # ## Imports
 #
