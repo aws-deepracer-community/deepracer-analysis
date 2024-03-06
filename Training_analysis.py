@@ -41,14 +41,14 @@
 #
 # ## Installs and setups
 #
-# If you are using an AWS SageMaker Notebook to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
+# If you are using an AWS SageMaker Notebook or Sagemaker Studio Lab to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
 
 # +
-# Make sure you have deepracer-utils >= 0.9
+# Make sure you have the required pre-reqs
 
 # import sys
 
-# # !{sys.executable} -m pip install --upgrade deepracer-utils
+# # !{sys.executable} -m pip install --upgrade -r requirements.txt
 # -
 
 # ## Imports

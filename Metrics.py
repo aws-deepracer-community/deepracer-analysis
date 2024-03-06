@@ -37,6 +37,19 @@
 #
 # Boto Configuration: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
 #
+#
+# ## Installs and setups
+#
+# If you are using an AWS SageMaker Notebook or Sagemaker Studio Lab to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
+
+# +
+# Make sure you have the required pre-reqs
+
+# import sys
+
+# # !{sys.executable} -m pip install --upgrade -r requirements.txt
+# -
+
 # ## Imports & Functions
 #
 # Run the imports and function blocks below:
