@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.16.0
+#       jupytext_version: 1.16.1
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: sagemaker-distribution:Python
 #     language: python
-#     name: python3
+#     name: conda-env-sagemaker-distribution-py
 # ---
 
 # # Visual Analysis
@@ -105,7 +105,6 @@ S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for l
 #
 # Provide the paths where the image and models are stored. Also define which iterations you would like to review.
 
-# +
 img_selection = 'logs/sample-model/pictures/*.png'
 model_path = 'logs/' + PREFIX
 iterations = [1, 2, 3] #enter the numbers of your iterations you want to try (must exist in the model folder in S3)
@@ -118,7 +117,6 @@ s3_resource.Object(BUCKET, PREFIX + '/model/model_metadata.json').download_file(
 for i in iterations:
     s3_resource.Object(BUCKET, PREFIX + '/model/model_' + str(i) + '.pb').download_file(
        f'logs/{PREFIX}/' + 'model_' + str(i) + '.pb')
-# -
 
 # +
 # # Example / Alternative for logs on file-system
