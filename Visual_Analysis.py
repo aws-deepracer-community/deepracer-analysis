@@ -62,6 +62,7 @@ import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 import cv2
 
@@ -108,10 +109,7 @@ S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for l
 img_selection = 'logs/sample-model/pictures/*.png'
 model_path = 'logs/' + PREFIX
 iterations = [1, 2, 3] #enter the numbers of your iterations you want to try (must exist in the model folder in S3)
-try: 
-    os.makedirs(model_path)
-except: 
-    print("Directory already exists")
+Path(model_path).mkdir(parents=True, exist_ok=True)
 s3_resource.Object(BUCKET, PREFIX + '/model/model_metadata.json').download_file(
    f'logs/{PREFIX}/model_metadata.json')
 for i in iterations:
