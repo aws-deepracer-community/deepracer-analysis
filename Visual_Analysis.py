@@ -106,7 +106,7 @@ S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for l
 #
 # Provide the paths where the image and models are stored. Also define which iterations you would like to review.
 
-img_selection = 'logs/sample-model/pictures/*.png'
+img_selection = 'logs/sample-model/pictures/*.png' # replace with your own images as appropriate
 model_path = 'logs/' + PREFIX
 iterations = [1, 2, 3] #enter the numbers of your iterations you want to try (must exist in the model folder in S3)
 Path(model_path).mkdir(parents=True, exist_ok=True)
