@@ -47,6 +47,8 @@
 # import sys
 
 # # !{sys.executable} -m pip install --upgrade -r requirements.txt
+# # !{sys.executable} -m pip install opencv-python
+# # !{sys.executable} -m pip install tensorflow
 # -
 
 #
