@@ -78,7 +78,18 @@ import boto3
 s3_resource = boto3.resource('s3')
 # -
 
-# ## Login
+# # Use example files to understand how the notebook works
+#Only run this cell to use the example files
+
+# # Example / Alternative for logs on file-system
+img_selection = 'logs/sample-model/pictures/*.png'
+model_path = 'logs/sample-model/model'
+iterations = [15, 30, 48]
+model_type = 'example'
+
+# # Advanced - Fetch your own models from S3 / Minio
+
+# ### Login
 #
 # Login to AWS. There are several ways to log in:
 # 1. On EC2 instance or Sagemaker Notebook with correct IAM execution role assigned.
@@ -92,7 +103,7 @@ s3_resource = boto3.resource('s3')
 # os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
 # -
 
-# ## Configure S3 to get the models
+# ### Configure S3 to get the models
 #
 # Depending on which way you are training your model, you will need a slightly different way to load the data.
 #
@@ -102,28 +113,23 @@ PREFIX='model-name'   # Name of the model, without trailing '/'
 BUCKET='bucket'       # Bucket name is default 'bucket' when training locally
 PROFILE=None          # The credentials profile in .aws - 'minio' for local training
 S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
-# -
-
-# ## Configure and load files
-#
-# Provide the paths where the image and models are stored. Also define which iterations you would like to review.
-
-img_selection = 'logs/sample-model/pictures/*.png' # replace with your own images as appropriate
-model_path = 'logs/' + PREFIX
 iterations = [1, 2, 3] #enter the numbers of your iterations you want to try (must exist in the model folder in S3)
-Path(model_path).mkdir(parents=True, exist_ok=True)
-s3_resource.Object(BUCKET, PREFIX + '/model/model_metadata.json').download_file(
-   f'logs/{PREFIX}/model_metadata.json')
-for i in iterations:
-    s3_resource.Object(BUCKET, PREFIX + '/model/model_' + str(i) + '.pb').download_file(
-       f'logs/{PREFIX}/' + 'model_' + str(i) + '.pb')
-
-# +
-# # Example / Alternative for logs on file-system
-#img_selection = 'logs/sample-model/pictures/*.png'
-#model_path = 'logs/sample-model/model'
-#iterations = [15, 30, 48]
+img_selection = 'logs/sample-model/pictures/*.png' # replace with your own images as appropriate
+model_type = 's3'
 # -
+
+# ### Configure and load files
+#
+if model_type!='s3':
+    model_path = 'logs/' + PREFIX
+    Path(model_path).mkdir(parents=True, exist_ok=True)
+    s3_resource.Object(BUCKET, PREFIX + '/model/model_metadata.json').download_file(
+       f'logs/{PREFIX}/model_metadata.json')
+    for i in iterations:
+        s3_resource.Object(BUCKET, PREFIX + '/model/model_' + str(i) + '.pb').download_file(
+           f'logs/{PREFIX}/' + 'model_' + str(i) + '.pb')
+
+# # Load the models and pictures
 
 # Load the model metadata in, and define which sensor is in use.
 
