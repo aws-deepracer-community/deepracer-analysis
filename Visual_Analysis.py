@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.16.1
+#       jupytext_version: 1.16.0
 #   kernelspec:
 #     display_name: default:Python
 #     language: python
-#     name: conda-env-default-py
+#     name: python3
 # ---
 
 # # Visual Analysis
