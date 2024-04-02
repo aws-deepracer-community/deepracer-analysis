@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.16.1
 #   kernelspec:
-#     display_name: sagemaker-distribution:Python
+#     display_name: default:Python
 #     language: python
-#     name: conda-env-sagemaker-distribution-py
+#     name: conda-env-default-py
 # ---
 
 # # Visual Analysis
@@ -79,7 +79,7 @@ s3_resource = boto3.resource('s3')
 # -
 
 # # Use example files to understand how the notebook works
-#Only run this cell to use the example files
+# Only run this cell to use the example files
 
 # # Example / Alternative for logs on file-system
 img_selection = 'logs/sample-model/pictures/*.png'
