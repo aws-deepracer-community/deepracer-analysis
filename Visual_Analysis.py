@@ -120,7 +120,7 @@ model_type = 's3'
 
 # ### Configure and load files
 #
-if model_type!='s3':
+if model_type=='s3':
     model_path = 'logs/' + PREFIX
     Path(model_path).mkdir(parents=True, exist_ok=True)
     s3_resource.Object(BUCKET, PREFIX + '/model/model_metadata.json').download_file(
