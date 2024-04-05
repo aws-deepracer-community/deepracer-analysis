@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -207,6 +207,11 @@ pu.plot_trackpoints(track)
 # It represents how big part of all episodes in an iteration is full laps. The value is from range [0, 1] and is a result of dividing amount of full laps in iteration by amount of all episodes in iteration. I say it has to go in pair with the previous one because you not only need a fast lapper, you also want a race completer.
 #
 # The higher the value, the more stable the model is on a given track.
+
+# +
+# Uncomment the line of code below to evaluate a different reward function
+#l_track = track.center_line
+#nr.new_reward(df, l_track, 'reward.reward_sample') #, verbose=True)
 
 # +
 simulation_agg = au.simulation_agg(df)

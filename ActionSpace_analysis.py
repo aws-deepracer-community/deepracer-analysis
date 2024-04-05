@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -173,7 +173,7 @@ except Exception:
 
 # +
 # Uncomment the line of code below to evaluate a different reward function
-# nr.new_reward(df, l_center_line, 'reward.reward_sample') #, verbose=True)
+# nr.new_reward(df, l_track, 'reward.reward_sample') #, verbose=True)
 # -
 
 simulation_agg = au.simulation_agg(df)
