@@ -209,6 +209,11 @@ pu.plot_trackpoints(track)
 # The higher the value, the more stable the model is on a given track.
 
 # +
+# Uncomment the line of code below to evaluate a different reward function
+#l_track = track.center_line
+#nr.new_reward(df, l_track, 'reward.reward_sample') #, verbose=True)
+
+# +
 simulation_agg = au.simulation_agg(df)
 try: 
     if df.nunique(axis=0)['worker'] > 1:

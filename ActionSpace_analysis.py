@@ -173,7 +173,7 @@ except Exception:
 
 # +
 # Uncomment the line of code below to evaluate a different reward function
-# nr.new_reward(df, l_center_line, 'reward.reward_sample') #, verbose=True)
+# nr.new_reward(df, l_track, 'reward.reward_sample') #, verbose=True)
 # -
 
 simulation_agg = au.simulation_agg(df)
