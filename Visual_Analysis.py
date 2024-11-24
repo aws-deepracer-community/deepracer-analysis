@@ -47,6 +47,8 @@
 # import sys
 
 # # !{sys.executable} -m pip install --upgrade -r requirements.txt
+# # !{sys.executable} -m pip install opencv-python
+# # !{sys.executable} -m pip install tensorflow
 # -
 
 #
@@ -62,6 +64,7 @@ import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 import cv2
 
@@ -70,15 +73,63 @@ tf.disable_v2_behavior()
 from tensorflow.compat.v1.io.gfile import GFile
 
 from deepracer.model import load_session, visualize_gradcam_discrete_ppo, rgb2gray
+
+import boto3
+s3_resource = boto3.resource('s3')
 # -
 
-# ## Configure and load files
-#
-# Provide the paths where the image and models are stored. Also define which iterations you would like to review.
+# # Use example files to understand how the notebook works
+# Only run this cell to use the example files
 
+# # Example / Alternative for logs on file-system
 img_selection = 'logs/sample-model/pictures/*.png'
 model_path = 'logs/sample-model/model'
 iterations = [15, 30, 48]
+model_type = 'example'
+
+# # Advanced - Fetch your own models from S3 / Minio
+
+# ### Login
+#
+# Login to AWS. There are several ways to log in:
+# 1. On EC2 instance or Sagemaker Notebook with correct IAM execution role assigned.
+# 2. AWS credentials available in `.aws/` through using the `aws configure` command. (DeepRacer-for-Cloud's `dr-start-loganalysis` supports this)
+# 3. Setting the relevant environment variables by uncommenting the below section.
+
+# +
+# os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
+# os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
+# os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
+# os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
+# -
+
+# ### Configure S3 to get the models
+#
+# Depending on which way you are training your model, you will need a slightly different way to load the data.
+#
+
+# + tags=["parameters"]
+PREFIX='model-name'   # Name of the model, without trailing '/'
+BUCKET='bucket'       # Bucket name is default 'bucket' when training locally
+PROFILE=None          # The credentials profile in .aws - 'minio' for local training
+S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
+iterations = [1, 2, 3] #enter the numbers of your iterations you want to try (must exist in the model folder in S3)
+img_selection = 'logs/sample-model/pictures/*.png' # replace with your own images as appropriate
+model_type = 's3'
+# -
+
+# ### Configure and load files
+#
+if model_type=='s3':
+    model_path = 'logs/' + PREFIX
+    Path(model_path).mkdir(parents=True, exist_ok=True)
+    s3_resource.Object(BUCKET, PREFIX + '/model/model_metadata.json').download_file(
+       f'logs/{PREFIX}/model_metadata.json')
+    for i in iterations:
+        s3_resource.Object(BUCKET, PREFIX + '/model/model_' + str(i) + '.pb').download_file(
+           f'logs/{PREFIX}/' + 'model_' + str(i) + '.pb')
+
+# # Load the models and pictures
 
 # Load the model metadata in, and define which sensor is in use.
 
@@ -154,7 +205,7 @@ plt.show()
 
 # +
 heatmaps = []
-view_models = models_file_path[1:3]
+view_models = models_file_path[0:len(iterations)]
 
 for model_file in view_models:
     model, obs, model_out = load_session(model_file, my_sensor, False)
