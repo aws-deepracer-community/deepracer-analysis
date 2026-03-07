@@ -9,3 +9,4 @@ docker-build/
 *.pickle
 .ipynb_checkpoints
 .vscode/settings.json
+.venv/

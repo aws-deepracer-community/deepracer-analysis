@@ -7,7 +7,7 @@ ENV VIRTUAL_ENV="/opt/venv"
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 LABEL maintainer="AWS Deepracer Community" \
-      description="Log Analysis for DeepRacer" \
+      description="Log Analysis for DeepRacer (TensorFlow)" \
       version=2.0
 
 # System dependencies
@@ -34,6 +34,7 @@ RUN mkdir -p /workspace/analysis && chown -R ubuntu:ubuntu /workspace
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r /tmp/requirements.txt && \
+    pip install --no-cache-dir "deepracer-utils[visualization]" && \
     chmod -R a+rX "${VIRTUAL_ENV}"
 
 # Copy notebook content
@@ -50,7 +51,7 @@ COPY docker/jupyter_overrides.json /opt/venv/share/jupyter/lab/settings/override
 
 EXPOSE 8888
 VOLUME ["/workspace/analysis", "/home/ubuntu/.aws"]
-# Entrypoint runs as root, remaps UID/GID, then drops to notebook user
+# Entrypoint runs as root, remaps UID/GID, then drops to ubuntu user
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["jupyter", "lab", \
      "--ip=0.0.0.0", \
