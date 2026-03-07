@@ -1,11 +1,16 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
+<<<<<<< HEAD
 #       format_name: light
 #       format_version: '1.5'
+=======
+#       format_name: percent
+#       format_version: '1.3'
+>>>>>>> master
 #       jupytext_version: 1.19.1
 #   kernelspec:
 #     display_name: .venv (3.12.3)
@@ -13,6 +18,7 @@
 #     name: python3
 # ---
 
+# %% [markdown]
 # # Visual Analysis
 #
 # This notebook has been created to support two main purposes:
@@ -36,27 +42,32 @@
 #
 # This workbook will require `tensorflow` and `cv2` to work.
 
+# %% [markdown]
 #
 # ## Installs and setups
 #
 # If you are using an AWS SageMaker Notebook or Sagemaker Studio Lab to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
 
-# +
+# %%
 # Make sure you have the required pre-reqs
 
 # import sys
 
 # # !{sys.executable} -m pip install --upgrade -r requirements.txt
+<<<<<<< HEAD
 # # !{sys.executable} -m pip install opencv-python-headless
 # # !{sys.executable} -m pip install tensorflow
 # -
+=======
+>>>>>>> master
 
+# %% [markdown]
 #
 # ## Imports
 #
 # Run the imports block below:
 
-# +
+# %%
 import json
 import os
 import glob
@@ -74,6 +85,7 @@ tf.disable_v2_behavior()
 from tensorflow.compat.v1.io.gfile import GFile
 
 from deepracer.model import load_session, visualize_gradcam_discrete_ppo, rgb2gray
+<<<<<<< HEAD
 
 import boto3
 s3_resource = boto3.resource('s3')
@@ -83,6 +95,15 @@ s3_resource = boto3.resource('s3')
 # Only run this cell to use the example files
 
 # # Example / Alternative for logs on file-system
+=======
+
+# %% [markdown]
+# ## Configure and load files
+#
+# Provide the paths where the image and models are stored. Also define which iterations you would like to review.
+
+# %%
+>>>>>>> master
 img_selection = 'logs/sample-model/pictures/*.png'
 model_path = 'logs/sample-model/model'
 iterations = [15, 30, 48]
@@ -132,28 +153,34 @@ if model_type=='s3':
 
 # # Load the models and pictures
 
+# %% [markdown]
 # Load the model metadata in, and define which sensor is in use.
 
+# %%
 with open("{}/model_metadata.json".format(model_path),"r") as jsonin:
     model_metadata=json.load(jsonin)
 my_sensor = [sensor for sensor in model_metadata['sensor'] if sensor != "LIDAR"][0]
 display(model_metadata)
 
+# %% [markdown]
 # Load in the pictures from the pre-defined path.
 
+# %%
 picture_files = sorted(glob.glob(img_selection))
 display(picture_files)
 
+# %%
 action_names = []
 degree_sign= u'\N{DEGREE SIGN}'
 for action in model_metadata['action_space']:
     action_names.append(str(action['steering_angle'])+ degree_sign + " "+"%.1f"%action["speed"])
 display(action_names)
 
+# %% [markdown]
 # ## Load the model files and process pictures
 # We will now load in the models and process the pictures. Output is a nested list with size `n` models as the outer and `m` picture as the inner list. The inner list will contain a number of values equal to the 
 
-# +
+# %%
 model_inference = []
 models_file_path = []
 
@@ -177,16 +204,17 @@ for model_file in models_file_path:
     model_inference.append(arr)
     model.close()
     tf.reset_default_graph()
-# -
 
+# %% [markdown]
 # ## Simulation Image Analysis - Probability distribution on decisions (actions)
 #
 # We will now show the probabilities per action for the selected picture and iterations. The higher the probability of one single action the more mature is the model. Comparing different models enables the developer to see how the model is becoming more certain over time.
 
+# %%
 PICTURE_INDEX=1
 display(picture_files[PICTURE_INDEX])
 
-# +
+# %%
 x = list(range(1,len(action_names)+1))
 
 num_plots = len(iterations)
@@ -198,13 +226,13 @@ for p in range(0, num_plots):
     
 plt.xticks(x,action_names[::-1],rotation='vertical')
 plt.show()
-# -
 
+# %% [markdown]
 # ## What is the model looking at?
 #
 # Gradcam: visual heatmap of where the model is looking to make its decisions. based on https://arxiv.org/pdf/1610.02391.pdf
 
-# +
+# %%
 heatmaps = []
 view_models = models_file_path[0:len(iterations)]
 
@@ -219,10 +247,16 @@ for model_file in view_models:
 
     tf.reset_default_graph()
 
+<<<<<<< HEAD
 # +
 fig, ax = plt.subplots(len(view_models), len(picture_files),
                        figsize=(5*len(picture_files), 4*len(view_models)),
                        squeeze=False, constrained_layout=True)
+=======
+# %%
+fig, ax = plt.subplots(len(view_models),len(picture_files),
+                       figsize=(7*len(view_models),2.5*len(picture_files)), sharex=True, sharey=True, squeeze=False)
+>>>>>>> master
 
 for i in range(len(view_models)):
     ax[i, 0].set_ylabel(os.path.basename(view_models[i]))
@@ -233,6 +267,5 @@ for i in range(len(view_models)):
             ax[i][j].set_xlabel(os.path.basename(picture_files[j]))
 
 plt.show()
-# -
-
+# %%
 
