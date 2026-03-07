@@ -1,18 +1,19 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.19.1
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # Action Space analysis for AWS DeepRacer
 # This notebook has been built for the [AWS DeepRacer-Analysis](https://github.com/aws-deepracer-community/deepracer-analysis.git) 
 # provided by  the [AWS DeepRacer Community](http://join.deepracing.io).
@@ -27,6 +28,7 @@
 # ## Credits
 # I would like to thank [the AWS DeepRacer Community](http://join.deepracing.io)
 
+# %% [markdown]
 #
 # # Log Analysis
 #
@@ -36,20 +38,20 @@
 #
 # If you are using an AWS SageMaker Notebook or Sagemaker Studio Lab to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
 
-# +
+# %%
 # Make sure you have the required pre-reqs
 
 # import sys
 
 # # !{sys.executable} -m pip install --upgrade -r requirements.txt
-# -
 
+# %% [markdown]
 #
 # ## Imports
 #
 # Run the imports block below:
 
-# +
+# %%
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -69,8 +71,8 @@ import os
 # Ignore deprecation warnings we have no power over
 import warnings
 warnings.filterwarnings('ignore')
-# -
 
+# %% [markdown]
 # ## Login
 #
 # Login to AWS. There are several ways to log in:
@@ -78,29 +80,29 @@ warnings.filterwarnings('ignore')
 # 2. AWS credentials available in `.aws/` through using the `aws configure` command. (DeepRacer-for-Cloud's `dr-start-loganalysis` supports this)
 # 3. Setting the relevant environment variables by uncommenting the below section.
 
-# +
+# %%
 # os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
 # os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
 # os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
 # os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
-# -
 
+# %% [markdown]
 # ## Load waypoints for the track you want to run analysis on
 #
 # Remeber that evaluation npy files are a community effort to visualise the tracks in the trainings, they aren't 100% accurate.
 #
 # Tracks Available:
 
-# +
+# %%
 tu = TrackIO()
 
 for f in tu.get_tracks():
     print(f)
-# -
 
+# %% [markdown]
 # Take the name from results above and paste below to load the key elements of the track and view the outline of it.
 
-# +
+# %%
 track: Track = tu.load_track("reinvent_base")
  
 l_track = track.center_line
@@ -108,21 +110,21 @@ l_outer_border = track.outer_border
 l_inner_border = track.inner_border
 
 pu.plot_trackpoints(track)
-# -
 
+# %% [markdown]
 # ## Get the logs
 #
 # Depending on which way you are training your model, you will need a slightly different way to load the data. The simplest way to read in training data is using the sim-trace files directly from S3.
 #
 # For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md)
 
-# + tags=["parameters"]
+# %% tags=["parameters"]
 PREFIX='Demo-Reinvent'      # Name of the model, without trailing '/'
 BUCKET='deepracer-local'    # Bucket name is default 'bucket' when training locally
 PROFILE=None                # The credentials profile in .aws - 'minio' for local training
 S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 
-# +
+# %%
 fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
 log = DeepRacerLog(filehandler=fh)
 log.load_training_trace()
@@ -143,8 +145,8 @@ try:
 except Exception:
     print("Multiple workers not detected, assuming 1 worker")
     EPISODES_PER_ITERATION=int(log.hyperparameters()['num_episodes_between_training'])
-# -
 
+# %% [markdown]
 # ## Load the trace training log
 #
 # Now that the data is downloaded, we need to load it into memory. We will first read it from file and then convert to data frames in Pandas. [Pandas](https://pandas.pydata.org/) is a Python library for handling and analysing large amounts of data series. Remember this name, you may want to learn more about how to use it to get more information that you would like to get from the logs. Examples below are hardly scratching the surface.
@@ -171,11 +173,11 @@ except Exception:
 # * track length
 # * timestamp
 
-# +
+# %%
 # Uncomment the line of code below to evaluate a different reward function
 # nr.new_reward(df, l_center_line, 'reward.reward_sample') #, verbose=True)
-# -
 
+# %%
 simulation_agg = au.simulation_agg(df)
 try: 
     if df.nunique(axis=0)['worker'] > 1:
@@ -185,38 +187,41 @@ except:
     print("Multiple workers not detected, assuming 1 worker")
 au.analyze_training_progress(simulation_agg, title='Training progress')
 
+# %%
 au.scatter_aggregates(simulation_agg, 'Stats for all laps')
 
-# +
+# %%
 complete_ones = simulation_agg[simulation_agg['progress']==100]
 
 if complete_ones.shape[0] > 0:
     au.scatter_aggregates(complete_ones, 'Stats for complete laps')
 else:
     print('No complete laps yet.')
-# -
 
+# %%
 # View five best rewarded in completed laps (according to new_reward if you are using it)
 complete_ones.nlargest(5, 'reward')
 
+# %%
 # View five most progressed episodes
 simulation_agg.nlargest(5, 'progress')
 
+# %%
 # View information for a couple last episodes
 simulation_agg.tail()
 
-# +
+# %%
 # Set maximum quantity of rows to view for a dataframe display - without that
 # the view below will just hide some of the steps
 pd.set_option('display.max_rows', 500)
 
 # View all steps data for episode 10
 df[df['episode']==320]
-# -
 
+# %% [markdown]
 # # Extract Action Space List from LOG file
 
-# +
+# %%
 # Extract Action Space List
 dgr_norm = 1 # for degrees
 
@@ -287,11 +292,11 @@ print("Actions: \nindex\t\tsteering\tthrottle")
 for obj in asl: 
     print( obj.index, obj.steer, obj.throttle, sep ='\t\t' ) 
     
-# -
 
+# %% [markdown]
 # ## Function definitions
 
-# +
+# %%
 ## Action Index Map
 def plot_index_map(actSpaceList):
     fig = plt.figure(figsize=(7, 4))
@@ -385,20 +390,25 @@ def plot_episode_color(df, E): #, center_line, inner_border, outer_border):
         plt.scatter(x1, y1, color=action_color, s=action_s, alpha=0.75)
 
 
-# -
-
+# %% [markdown]
 # # Action Space Visualization
 
+# %%
 plot_index_map(asl)    
 
+# %% [markdown]
 # # Analysing data from all episodes
 
+# %%
 tr_plot = pu.plot_track(df, track, value_field="reward") 
 
+# %%
 plot_4_hist(df)
 
+# %%
 plot_polar_hist(df)
 
+# %% [markdown]
 #
 #
 # # Analyzing specific iteration
@@ -407,46 +417,59 @@ plot_polar_hist(df)
 #
 #
 
+# %%
 # Set iteration id
 #itr = 12                      # iteration id
 itr=df['iteration'].max()-10     # last iteration
 
+# %%
 for i in range((itr-1)*EPISODES_PER_ITERATION, (itr)*EPISODES_PER_ITERATION):
     plot_episode_red(df,i) #,l_inner_border, l_inner_border, l_outer_border)
 print('Iteration:',itr)    
 
+# %%
 #plot_episode_as_hist(df, itr=25)  # specific iteration
 plot_4_hist(df, itr)  # last iteration
 
+# %%
 plot_polar_hist(df, itr)
 
+# %% [markdown]
 #
 #
 # # Analyzing specific episode
 #
 #
 
+# %%
 ### choose episode id
 EPZ = 210
 
+# %%
 # Plot Index Map to understand graph
 plot_index_map(asl)
 
+# %%
 print("Every dot is one step. Dot size is proportional to the throttle")
 print("Colors: Green = Straight, Red = Steering Left, Blue = Steering Right")
 plot_episode_color(df,EPZ) #, l_inner_border, l_inner_border, l_outer_border) # arbitrary episode
 
+# %%
 plot_4_hist(df, E = EPZ)
 
+# %%
 plot_polar_hist(df, E = EPZ)
 
+# %%
 #This shows a histogram of actions per waypoint. Will let you spot potentially problematic places
 episode = df[df['episode']==EPZ]
 episode[:-1].plot.bar(x='closest_waypoint', y='reward',figsize=(16, 6))
 
+# %% [markdown]
 # # Analyzing Actions
 # ## You can analyze all actions or only set of actions with indexes defined in setActions
 
+# %%
 aslNum = len(asl)
 setActions = range(aslNum)     # show graphs for all Actions
 #setActions = (0,1,6,8,9)       # show graphs only for index set Actions
@@ -457,4 +480,4 @@ for i in setActions:
     tr_plot = pu.plot_track(df[df['action'] == a.index], track, value_field="reward") 
     plt.show()
 
-
+# %%

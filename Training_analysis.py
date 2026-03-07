@@ -1,18 +1,19 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.19.1
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # Training analysis for DeepRacer
 #
 # This notebook has been built based on the `DeepRacer Log Analysis.ipynb` provided by the AWS DeepRacer Team. It has been reorganised and expanded to provide new views on the training data without the helper code which was moved into the [`deepracer-utils` library](https://github.com/aws-deepracer-community/deepracer-utils).
@@ -35,6 +36,7 @@
 # * [CodeLikeAMother](https://codelikeamother.uk) for initial rework of the notebook.
 # * [The AWS DeepRacer Community](http://join.deepracing.io) for feedback and incremental improvements.
 
+# %% [markdown]
 # # Log Analysis
 #
 # Let's get to it.
@@ -43,19 +45,19 @@
 #
 # If you are using an AWS SageMaker Notebook or Sagemaker Studio Lab to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
 
-# +
+# %%
 # Make sure you have the required pre-reqs
 
 # import sys
 
 # # !{sys.executable} -m pip install --upgrade -r requirements.txt
-# -
 
+# %% [markdown]
 # ## Imports
 #
 # Run the imports block below:
 
-# +
+# %%
 import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
@@ -75,8 +77,8 @@ from deepracer.logs import \
 # Ignore deprecation warnings we have no power over
 import warnings
 warnings.filterwarnings('ignore')
-# -
 
+# %% [markdown]
 # ## Login
 #
 # Login to AWS. There are several ways to log in:
@@ -84,37 +86,37 @@ warnings.filterwarnings('ignore')
 # 2. AWS credentials available in `.aws/` through using the `aws configure` command. (DeepRacer-for-Cloud's `dr-start-loganalysis` supports this)
 # 3. Setting the relevant environment variables by uncommenting the below section.
 
-# +
+# %%
 # os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
 # os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
 # os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
 # os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
-# -
 
+# %% [markdown]
 # ## Get the logs
 #
 # Depending on which way you are training your model, you will need a slightly different way to load the data. The simplest way to read in training data is using the sim-trace files.
 #
 # For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md).
 
-# + tags=["parameters"]
+# %% tags=["parameters"]
 PREFIX='model-name'   # Name of the model, without trailing '/'
 BUCKET='bucket'       # Bucket name is default 'bucket' when training locally
 PROFILE=None          # The credentials profile in .aws - 'minio' for local training
 S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
-# -
 
+# %%
 fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
 log = DeepRacerLog(filehandler=fh)
 log.load_training_trace()
 
-# +
+# %%
 # # Example / Alternative for logs on file-system
 # fh = FSFileHandler(model_folder='logs/sample-console-logs', robomaker_log_path='logs/sample-console-logs/logs/training/training-20220611230353-EHNgTNY2T9-77qXhqjBi6A-robomaker.log')
 # log = DeepRacerLog(filehandler=fh)
 # log.load_robomaker_logs()
-# -
 
+# %%
 try:
     pprint(log.agent_and_network())
     print("-------------")
@@ -124,12 +126,16 @@ try:
 except Exception:
     print("Logs not available")
 
+# %%
 df = log.dataframe()
 
+# %% [markdown]
 # If the code above worked, you will see a list of details printed above: a bit about the agent and the network, a bit about the hyperparameters and some information about the action space. Now let's see what got loaded into the dataframe - the data structure holding your simulation information. the `head()` method prints out a few first lines of the data:
 
+# %%
 df.head()
 
+# %% [markdown]
 # ## Load waypoints for the track you want to run analysis on
 #
 # The track waypoint files represent the coordinates of characteristic points of the track - the center line, inside border and outside border. Their main purpose is to visualise the track in images below.
@@ -140,16 +146,16 @@ df.head()
 #
 # Tracks Available:
 
-# +
+# %%
 tu = TrackIO()
 
 for track in tu.get_tracks():
     print("{} - {}".format(track, track_meta.get(track[:-4], "I don't know")))
-# -
 
+# %% [markdown]
 # Now let's load the track:
 
-# +
+# %%
 # We will try to guess the track name first, if it 
 # fails, we'll use the constant in quotes
 
@@ -162,8 +168,8 @@ except Exception as e:
 track: Track = tu.load_track(track_name)
 
 pu.plot_trackpoints(track)
-# -
 
+# %% [markdown]
 # ## Graphs
 #
 # The original notebook has provided some great ideas on what could be visualised in the graphs. Below examples are a slightly extended version. Let's have a look at what they are presenting and what this may mean to your training.
@@ -208,7 +214,7 @@ pu.plot_trackpoints(track)
 #
 # The higher the value, the more stable the model is on a given track.
 
-# +
+# %%
 simulation_agg = au.simulation_agg(df)
 try: 
     if df.nunique(axis=0)['worker'] > 1:
@@ -218,7 +224,7 @@ except:
     print("Multiple workers not detected, assuming 1 worker")
 
 au.analyze_training_progress(simulation_agg, title='Training progress')
-# -
+# %% [markdown]
 # ### Stats for all laps
 #
 # Previous graphs were mainly focused on the state of training with regards to training progress. This however will not give you a lot of information about how well your reward function is doing overall.
@@ -231,23 +237,25 @@ au.analyze_training_progress(simulation_agg, title='Training progress')
 # Side note: `time_if_complete` is not very accurate and will almost always look better for episodes closer to 100% progress than in case of those 50% and below.
 
 
+# %%
 au.scatter_aggregates(simulation_agg, 'Stats for all laps')
 
+# %% [markdown]
 # ### Stats for complete laps
 # The graphs here are same as above, but now I am interested in other type of information:
 # * does the reward scatter show higher rewards for lower completion times? If I give higher reward for a slower lap it might suggest that I am training the car to go slow
 # * what does the time histogram look like? With enough samples available the histogram takes a normal distribution graph shape. The lower the mean value, the better the chance to complete a fast lap consistently. The longer the tails, the greater the chance of getting lucky in submissions
 # * is the car completing laps around the place where the race lap starts? Or does it only succeed if it starts in a place different to the racing one?
 
-# +
+# %%
 complete_ones = simulation_agg[simulation_agg['progress']==100]
 
 if complete_ones.shape[0] > 0:
     au.scatter_aggregates(complete_ones, 'Stats for complete laps')
 else:
     print('No complete laps yet.')
-# -
 
+# %% [markdown]
 # ### Categories analysis
 # We're going back to comparing training results based on the training time, but in a different way. Instead of just scattering things in relation to iteration or episode number, this time we're grouping episodes based on a certaing information. For this we use function:
 # ```
@@ -261,8 +269,10 @@ else:
 #
 # A second side note: if you run this function for `complete_ones` instead of `simulation_agg`, suddenly the time histogram becomes more interesting as you can see whether completion times improve.
 
+# %%
 au.scatter_by_groups(simulation_agg, title='Quintiles')
 
+# %% [markdown]
 # ## Data in tables
 #
 # While a lot can be seen in graphs that cannot be seen in the raw numbers, the numbers let us get into more detail. Below you will find a couple examples. If your model is behaving the way you would like it to, below tables may provide little added value, but if you struggle to improve your car's performance, they may come handy. In such cases I look for examples where high reward is giving to below-expected episode and when good episodes are given low reward.
@@ -278,36 +288,42 @@ au.scatter_by_groups(simulation_agg, title='Quintiles')
 #
 # The examples have a short comment next to them explaining what they are showing.
 
+# %%
 # View ten best rewarded episodes in the training
 simulation_agg.nlargest(10, 'new_reward')
 
+# %%
 # View five fastest complete laps
 complete_ones.nsmallest(5, 'time')
 
+# %%
 # View five best rewarded completed laps
 complete_ones.nlargest(5, 'reward')
 
+# %%
 # View five best rewarded in completed laps (according to new_reward if you are using it)
 complete_ones.nlargest(5, 'new_reward')
 
+# %%
 # View five most progressed episodes
 simulation_agg.nlargest(5, 'progress')
 
+# %%
 # View information for a couple first episodes
 simulation_agg.head()
 
-# +
+# %%
 # Set maximum quantity of rows to view for a dataframe display - without that
 # the view below will just hide some of the steps
 pd.set_option('display.max_rows', 500)
 
 # View all steps data for episode 10
 df[df['episode']==10]
-# -
 
+# %% [markdown]
 # ## Analyze the reward distribution for your reward function
 
-# +
+# %%
 # This shows a histogram of actions per closest waypoint for episode 889.
 # Will let you spot potentially problematic places in reward granting.
 # In this example reward function is clearly `return 1`. It may be worrying
@@ -321,8 +337,8 @@ if episode.empty:
     print("You probably don't have episode with this number, try a lower one.")
 else:
     episode.plot.bar(x='closest_waypoint', y='reward')
-# -
 
+# %% [markdown]
 # ### Path taken for top reward iterations
 #
 # NOTE: at some point in the past in a single episode the car could go around multiple laps, the episode was terminated when car completed 1000 steps. Currently one episode has at most one lap. This explains why you can see multiple laps in an episode plotted below.
@@ -336,7 +352,7 @@ else:
 # * Provide the list of them in a dataframe into the plot_selected_laps, together with the whole training dataframe and the track info,
 # * You've got the laps to analyse.
 
-# +
+# %%
 # Some examples:
 # highest reward for complete laps:
 # episodes_to_plot = complete_ones.nlargest(3,'reward')
@@ -352,7 +368,7 @@ try:
 except:
     print("Multiple workers not detected, assuming 1 worker")
     pu.plot_selected_laps(episodes_to_plot, df, track)
-# -
+# %% [markdown]
 # ### Plot a heatmap of rewards for current training. 
 # The brighter the colour, the higher the reward granted in given coordinates.
 # If instead of a similar view as in the example below you get a dark image with hardly any 
@@ -370,28 +386,30 @@ except:
 # lead to improvement. If that is missing, the model will struggle to improve.
 
 
-# +
+# %%
 #If you'd like some other colour criterion, you can add
 #a value_field parameter and specify a different column
 
 pu.plot_track(df, track)
-# -
 
+# %% [markdown]
 # ### Plot a particular iteration
 # This is same as the heatmap above, but just for a single iteration.
 
-# +
+# %%
 #If you'd like some other colour criterion, you can add
 #a value_field parameter and specify a different column
 iteration_id = 3
 
 pu.plot_track(df[df['iteration'] == iteration_id], track)
-# -
 
+# %% [markdown]
 # ### Path taken in a particular episode
 
+# %%
 episode_id = 12
 
+# %%
 try:
     if df.nunique(axis=0)['worker'] > 1:
         pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
@@ -401,14 +419,15 @@ except:
     print("Multiple workers not detected, assuming 1 worker")
     pu.plot_selected_laps([episode_id], df, track)
 
+# %% [markdown]
 # ### Path taken in a particular iteration
 
-# +
+# %%
 iteration_id = 10
 
 pu.plot_selected_laps([iteration_id], df, track, section_to_plot = 'iteration')
-# -
 
+# %% [markdown]
 # # Action breakdown per iteration and historgram for action distribution for each of the turns - reinvent track
 #
 # This plot is useful to understand the actions that the model takes for any given iteration. Unfortunately at this time it is not fit for purpose as it assumes six actions in the action space and has other issues. It will require some work to get it to done but the information it returns will be very valuable.
@@ -419,10 +438,13 @@ pu.plot_selected_laps([iteration_id], df, track, section_to_plot = 'iteration')
 #
 # Currently supported tracks:
 
+# %%
 track_breakdown.keys()
 
+# %% [markdown]
 # You can replace episode_ids with iteration_ids and make a breakdown for a whole iteration.
 #
 # **Note: does not work for continuous action space (yet).** 
 
+# %%
 abu.action_breakdown(df, track, track_breakdown=track_breakdown.get('reinvent2018'), episode_ids=[12])
