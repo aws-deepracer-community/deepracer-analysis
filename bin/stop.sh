@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker kill deepracer-analysis
+docker stop deepracer-analysis

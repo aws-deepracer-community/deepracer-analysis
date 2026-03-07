@@ -1,12 +1,12 @@
 #!/bin/sh
+set -e
 
 SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-if test "$1" = "lab"; then
-    LAB_ENV="-e JUPYTER_ENABLE_LAB=yes"
-fi
-
-docker run --rm -d -p 8888:8888 $LAB_ENV \
--v "$SCRIPTPATH/..":/home/jovyan/work \
--v ~/.aws:/home/jovyan/.aws \
---name deepracer-analysis deepracer-analysis
+docker run --rm -d \
+  -p 127.0.0.1:8888:8888 \
+  -e NB_UID="$(id -u)" \
+  -e NB_GID="$(id -g)" \
+  -v "$SCRIPTPATH/../analysis:/workspace/analysis" \
+  -v ~/.aws:/home/ubuntu/.aws \
+  --name deepracer-analysis deepracer-analysis
