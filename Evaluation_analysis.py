@@ -1,18 +1,19 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.19.1
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # Evaluation and submission analysis for DeepRacer
 #
 # This notebook has been built based on the `DeepRacer Log Analysis.ipynb` provided by the AWS DeepRacer Team. It has been reorganised and expanded to provide new views on the evaluation/racing data in a cleaner way, without the helper code which was moved into utility `.py` files.
@@ -59,19 +60,19 @@
 #
 # If you are using an AWS SageMaker Notebook or Sagemaker Studio Lab to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
 
-# +
+# %%
 # Make sure you have the required pre-reqs
 
 # import sys
 
 # # !{sys.executable} -m pip install --upgrade -r requirements.txt
-# -
 
+# %% [markdown]
 # ## Imports
 #
 # Run the imports block below:
 
-# +
+# %%
 from deepracer.tracks import TrackIO, Track
 from deepracer.tracks.track_utils import track_meta
 
@@ -89,8 +90,8 @@ import os
 # Ignore deprecation warnings we have no power over
 import warnings
 warnings.filterwarnings('ignore')
-# -
 
+# %% [markdown]
 # ## Login
 #
 # Login to AWS. There are several ways to log in:
@@ -98,13 +99,13 @@ warnings.filterwarnings('ignore')
 # 2. AWS credentials available in `.aws/` through using the `aws configure` command. (DeepRacer-for-Cloud's `dr-start-loganalysis` supports this)
 # 3. Setting the relevant environment variables by uncommenting the below section.
 
-# +
+# %%
 # os.environ["AWS_DEFAULT_REGION"] = "" #<-Add your region
 # os.environ["AWS_ACCESS_KEY_ID"] = "" #<-Add your access key
 # os.environ["AWS_SECRET_ACCESS_KEY"] = "" #<-Add you secret access key
 # os.environ["AWS_SESSION_TOKEN"] = "" #<-Add your session key if you have one
-# -
 
+# %% [markdown]
 # ## Load all race submission logs
 #
 # **WARNING:** If you do not specify `not_older_than` parameter, all evaluation logs will be downloaded. They aren't as big as the training logs, but there is a lot of them.
@@ -120,24 +121,27 @@ warnings.filterwarnings('ignore')
 #
 # For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md)
 
+# %%
 PREFIX='Demo-Reinvent'      # Name of the model, without trailing '/'
 BUCKET='deepracer-local'    # Bucket name is default 'bucket' when training locally
 PROFILE=None                # The credentials profile in .aws - 'minio' for local training
 S3_ENDPOINT_URL=None        # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 
+# %%
 fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
 log = DeepRacerLog(filehandler=fh)
 log.load_evaluation_trace()
 
-# +
+# %%
 # # Example / Alternative for logs on file-system
 # fh = FSFileHandler(model_folder='logs/sample-console-logs')
 # log = DeepRacerLog(filehandler=fh)
 # log.load_robomaker_logs(type=LogType.EVALUATION)
-# -
 
+# %%
 df = log.dataframe()
 
+# %% [markdown]
 # ## Load waypoints for the track you want to run analysis on
 # The track waypoint files represent the coordinates of characteristic points of the track - the center line, inside border and outside border. Their main purpose is to visualise the track in images below.
 #
@@ -147,18 +151,18 @@ df = log.dataframe()
 #
 # Tracks Available:
 
-# +
+# %%
 # !ls tracks/
 
 tu = TrackIO()
 
 for track in tu.get_tracks():
     print("{} - {}".format(track, track_meta.get(track[:-4], "I don't know")))
-# -
 
+# %% [markdown]
 # Now let's load the track:
 
-# +
+# %%
 # We will try to guess the track name first, if it 
 # fails, we'll use the constant in quotes
 
@@ -172,7 +176,7 @@ track: Track = tu.load_track(track_name)
 
 pu.plot_trackpoints(track)
 
-# +
+# %%
 simulation_agg = au.simulation_agg(df, 'stream', is_eval=True)
 complete_ones = simulation_agg[simulation_agg['progress']==100]
 
@@ -180,16 +184,19 @@ complete_ones = simulation_agg[simulation_agg['progress']==100]
 au.scatter_aggregates(simulation_agg, is_eval=True)
 if complete_ones.shape[0] > 0:
     au.scatter_aggregates(complete_ones, "Complete ones", is_eval=True)
-# -
 
+# %% [markdown]
 # ## Data in tables
 
+# %%
 # View fifteen most progressed attempts
 simulation_agg.nlargest(15, 'progress')
 
+# %%
 # View fifteen fastest complete laps
 complete_ones.nsmallest(15, 'time')
 
+# %% [markdown]
 # ## Plot all the evaluation laps
 #
 # The method below plots your evaluation attempts. Just note that that is a time consuming operation and therefore I suggest using `min_distance_to_plot` to just plot some of them.
@@ -200,22 +207,26 @@ complete_ones.nsmallest(15, 'time')
 #
 # If you want to plot a single lap, scroll down for an example which lets you do a couple more tricks.
 
+# %%
 pu.plot_evaluations(df, track)
 
+# %% [markdown]
 # ## Single lap
 # Below you will find some ideas of looking at a single evaluation lap. You may be interested in a specific part of it. This isn't very robust but can work as a starting point. Please submit your ideas for analysis.
 #
 # This place is a great chance to learn more about [Pandas](https://pandas.pydata.org/pandas-docs/stable/) and about how to process data series.
 
+# %%
 # Load a single lap
 fastest = complete_ones.nsmallest(1, 'time')[['stream','episode']][0:1]
 lap_df = df[(df['episode']==fastest.iloc[0,1]) & (df['stream']==fastest.iloc[0,0])]
 
+# %% [markdown]
 # We're adding a lot of columns here to the episode. To speed things up, it's only done per a single episode, so others will currently be missing this information.
 #
 # Now try using them as a `graphed_value` parameter.
 
-# +
+# %%
 lap_df.loc[:,'distance']=((lap_df['x'].shift(1)-lap_df['x']) ** 2 + (lap_df['y'].shift(1)-lap_df['y']) ** 2) ** 0.5
 lap_df.loc[:,'time']=lap_df['tstamp'].astype(float)-lap_df['tstamp'].shift(1).astype(float)
 lap_df.loc[:,'speed']=lap_df['distance']/(100*lap_df['time'])
@@ -224,6 +235,5 @@ lap_df.loc[:,'progress_delta']=lap_df['progress'].astype(float)-lap_df['progress
 lap_df.loc[:,'progress_delta_per_time']=lap_df['progress_delta']/lap_df['time']
 
 pu.plot_grid_world(lap_df, track, graphed_value='reward')
-# -
-
+# %%
 
