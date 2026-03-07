@@ -10,7 +10,7 @@ LABEL maintainer="AWS Deepracer Community" \
       description="Log Analysis for DeepRacer (TensorFlow)" \
       version=2.0
 
-# System dependencies (freeglut3 required for OpenGL-based visualization)
+# System dependencies
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install --no-install-recommends \
         python3 \
@@ -18,7 +18,6 @@ RUN apt-get update && apt-get upgrade -y && \
         libsm6 \
         libxext6 \
         libxrender1 \
-        freeglut3 \
         git \
         wget \
         gosu \
