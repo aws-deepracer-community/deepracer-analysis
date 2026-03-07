@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.16.0
+#       jupytext_version: 1.19.1
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: .venv (3.12.3)
 #     language: python
 #     name: python3
 # ---
@@ -47,7 +47,7 @@
 # import sys
 
 # # !{sys.executable} -m pip install --upgrade -r requirements.txt
-# # !{sys.executable} -m pip install opencv-python
+# # !{sys.executable} -m pip install opencv-python-headless
 # # !{sys.executable} -m pip install tensorflow
 # -
 
@@ -68,6 +68,7 @@ from pathlib import Path
 
 import cv2
 
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 from tensorflow.compat.v1.io.gfile import GFile
@@ -219,15 +220,18 @@ for model_file in view_models:
     tf.reset_default_graph()
 
 # +
-fig, ax = plt.subplots(len(view_models),len(picture_files),
-                       figsize=(7*len(view_models),2.5*len(picture_files)), sharex=True, sharey=True, squeeze=False)
+fig, ax = plt.subplots(len(view_models), len(picture_files),
+                       figsize=(5*len(picture_files), 4*len(view_models)),
+                       squeeze=False, constrained_layout=True)
 
-for i in list(range(len(view_models))):
-    plt.setp(ax[i, 0], ylabel=os.path.basename(view_models[i]))
-    for j in list(range(len(picture_files))):
+for i in range(len(view_models)):
+    ax[i, 0].set_ylabel(os.path.basename(view_models[i]))
+    for j in range(len(picture_files)):
         ax[i][j].imshow(heatmaps[i * len(picture_files) + j])
-        plt.setp(ax[-1:, j], xlabel=os.path.basename(picture_files[j]))
-       
+        ax[i][j].set_aspect('auto')
+        if i == len(view_models) - 1:
+            ax[i][j].set_xlabel(os.path.basename(picture_files[j]))
+
 plt.show()
 # -
 
