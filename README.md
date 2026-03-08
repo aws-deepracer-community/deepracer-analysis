@@ -1,4 +1,4 @@
-# deepracer-analysis
+# DeepRacer Analysis Notebooks
 
 This is a set of notebooks and utilities to enable analysis of logs for AWS DeepRacer.
 
