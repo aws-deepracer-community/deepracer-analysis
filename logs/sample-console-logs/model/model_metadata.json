@@ -1,0 +1,28 @@
+{
+    "action_space": [
+        {"steering_angle": -30.0, "speed": 1.0, "index": 0},
+        {"steering_angle": -30.0, "speed": 2.0, "index": 1},
+        {"steering_angle": -20.0, "speed": 1.0, "index": 2},
+        {"steering_angle": -20.0, "speed": 2.0, "index": 3},
+        {"steering_angle": -10.0, "speed": 1.0, "index": 4},
+        {"steering_angle": -10.0, "speed": 2.0, "index": 5},
+        {"steering_angle": 0.0,   "speed": 1.0, "index": 6},
+        {"steering_angle": 0.0,   "speed": 2.0, "index": 7},
+        {"steering_angle": 10.0,  "speed": 1.0, "index": 8},
+        {"steering_angle": 10.0,  "speed": 2.0, "index": 9},
+        {"steering_angle": 20.0,  "speed": 1.0, "index": 10},
+        {"steering_angle": 20.0,  "speed": 2.0, "index": 11},
+        {"steering_angle": 30.0,  "speed": 1.0, "index": 12},
+        {"steering_angle": 30.0,  "speed": 2.0, "index": 13}
+    ],
+    "action_space_type": "discrete",
+    "lidar_config": {
+        "num_sectors": 8,
+        "num_values_per_sector": 8,
+        "clipping_dist": 2.0
+    },
+    "neural_network": "DEEP_CONVOLUTIONAL_NETWORK_SHALLOW",
+    "sensor": ["FRONT_FACING_CAMERA"],
+    "version": "4.0",
+    "training_algorithm": "clipped_ppo"
+}

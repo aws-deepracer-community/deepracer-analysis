@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.1
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: .venv
 #     language: python
 #     name: python3
 # ---
@@ -72,7 +72,8 @@ from deepracer.logs import \
     PlottingUtils as pu, \
     ActionBreakdownUtils as abu, \
     DeepRacerLog, \
-    S3FileHandler, FSFileHandler
+    S3FileHandler, FSFileHandler, \
+    SimtraceStabilityAnalyzer
 
 # Ignore deprecation warnings we have no power over
 import warnings
@@ -106,15 +107,15 @@ PROFILE=None          # The credentials profile in .aws - 'minio' for local trai
 S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 
 # %%
-fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
-log = DeepRacerLog(filehandler=fh)
-log.load_training_trace()
+# fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
+# log = DeepRacerLog(filehandler=fh)
+# log.load_training_trace()
 
 # %%
-# # Example / Alternative for logs on file-system
-# fh = FSFileHandler(model_folder='logs/sample-console-logs', robomaker_log_path='logs/sample-console-logs/logs/training/training-20220611230353-EHNgTNY2T9-77qXhqjBi6A-robomaker.log')
-# log = DeepRacerLog(filehandler=fh)
-# log.load_robomaker_logs()
+# Example / Alternative for logs on file-system
+fh = FSFileHandler(model_folder='logs/sample-console-logs/')
+log = DeepRacerLog(filehandler=fh)
+log.load_training_trace()
 
 # %%
 try:
@@ -134,6 +135,13 @@ df = log.dataframe()
 
 # %%
 df.head()
+
+# %% [markdown]
+# ## Stability
+# When loading in the traces we can also analyze the stability of the simulator during the training. The DeepRacer simulator should run at 15 fps; meaning that each step should be on average 66.6ms apart. If the average is >70ms, and/or the 95th percentile is >90ms this means that there were performance problems with the simulator, which again could mean that the training was not as good as it could have been.
+
+# %%
+df_stats = log.stability.print_summary()
 
 # %% [markdown]
 # ## Load waypoints for the track you want to run analysis on
