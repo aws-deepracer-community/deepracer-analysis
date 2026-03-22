@@ -20,6 +20,8 @@ a set of Python files from which a notebook can then be genereted.
 Finally, the project files have been moved to
 [DeepRacer utils](https://github.com/aws-deepracer-community/deepracer-utils).
 
+![Iteration Animation](docs/iteration_animation.gif)
+
 ## Required setup
 
 It is assumed that you have aws-cli installed and configured in your account.
