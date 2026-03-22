@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.1
 #   kernelspec:
-#     display_name: .venv
+#     display_name: .venv (3.12.10)
 #     language: python
 #     name: python3
 # ---
@@ -17,12 +17,17 @@
 # # Training analysis for DeepRacer
 #
 # This notebook has been built based on the `DeepRacer Log Analysis.ipynb` provided by the AWS DeepRacer Team. It has been reorganised and expanded to provide new views on the training data without the helper code which was moved into the [`deepracer-utils` library](https://github.com/aws-deepracer-community/deepracer-utils).
+
+# %% [markdown]
+# ## Introduction
 #
-# ## Training environments
+
+# %% [markdown]
+# ### Training environments
 #
-# Depending on whether you're running your training through the console or using the local setup, and on which setup for local training you're using, your experience will vary. As much as I would like everything to be taylored to your configuration, there may be some problems that you may face. If so, please get in touch through [the AWS DeepRacer Community](http://join.deepracing.io).
+# Depending on whether you're running your training through the console or using the local setup, and on which setup for local training you're using, your experience will vary. While every effort has been made to support various configurations, there may still be some problems you face. If so, please get in touch through [the AWS DeepRacer Community](http://join.deepracing.io).
 #
-# ## Requirements
+# ### Requirements
 #
 # Before you start using the notebook, you will need to install some dependencies. If you haven't yet done so, have a look at [The README.md file](/edit/README.md#running-the-notebooks) to find what you need to install.
 #
@@ -30,38 +35,36 @@
 # * AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 # * Boto Configuration: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
 #
-# ## Credits
+# ### Credits
 #
 # * AWS DeepRacer Team for initial workbooks created for DeepRacer Workshops at Summits and re:Invent.
 # * [CodeLikeAMother](https://codelikeamother.uk) for initial rework of the notebook.
 # * [The AWS DeepRacer Community](http://join.deepracing.io) for feedback and incremental improvements.
 
 # %% [markdown]
-# # Log Analysis
+# ## Prepare
+
+# %% [markdown]
+# ### Prerequisites
 #
-# Let's get to it.
-#
-# ## Installs and setups
-#
-# If you are using an AWS SageMaker Notebook or Sagemaker Studio Lab to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
+# If you are using an AWS SageMaker Notebook or SageMaker Studio Lab to run the log analysis, you will need to ensure you install required dependencies. To do that uncomment and run the following:
 
 # %%
-# Make sure you have the required pre-reqs
-
 # import sys
-
 # # !{sys.executable} -m pip install --upgrade -r requirements.txt
 
 # %% [markdown]
-# ## Imports
+# ### Imports
 #
 # Run the imports block below:
 
 # %%
 import pandas as pd
 import matplotlib.pyplot as plt
+import ipywidgets as widgets
 from pprint import pprint
 import os
+from enum import Enum
 
 from deepracer.tracks import TrackIO, Track
 from deepracer.tracks.track_utils import track_breakdown, track_meta
@@ -72,15 +75,21 @@ from deepracer.logs import \
     PlottingUtils as pu, \
     ActionBreakdownUtils as abu, \
     DeepRacerLog, \
-    S3FileHandler, FSFileHandler, \
+    TarFileHandler, S3FileHandler, FSFileHandler, \
     SimtraceStabilityAnalyzer
 
 # Ignore deprecation warnings we have no power over
 import warnings
 warnings.filterwarnings('ignore')
 
+class MODE(Enum):
+    FS = "FS"
+    S3 = "S3"
+    TAR = "TAR"
+
+
 # %% [markdown]
-# ## Login
+# ### Login
 #
 # Login to AWS. There are several ways to log in:
 # 1. On EC2 instance or Sagemaker Notebook with correct IAM execution role assigned.
@@ -96,9 +105,31 @@ warnings.filterwarnings('ignore')
 # %% [markdown]
 # ## Get the logs
 #
-# Depending on which way you are training your model, you will need a slightly different way to load the data. The simplest way to read in training data is using the sim-trace files.
+# Depending on which way you are training your model, you will need a slightly different way to load the data. The simplest way to read in training data is using the sim-trace files, but the current workbook supports reading in a set of different formats, including the `tar.gz` files from DeepRacer on AWS. For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md).
+
+# %% [markdown]
+# ### Load the files
 #
-# For other ways to read in data look at the [configuration examples](https://github.com/aws-deepracer-community/deepracer-utils/blob/master/docs/examples.md).
+# Populate the `my_mode` variable to select what kind of log file you want to process.
+
+# %% tags=["parameters"]
+my_mode = MODE.FS # Change this to switch between FS, S3 and TAR modes
+
+# %% [markdown]
+# #### Folder on disk
+#
+# The `FSFileHandler` will load in a model folder extracted onto your local disk.
+
+# %%
+if my_mode == MODE.FS:
+    fh = FSFileHandler(model_folder=os.path.join('logs', 'sample-console-logs'))
+    log = DeepRacerLog(filehandler=fh, verbose=True)
+    log.load_training_trace()
+
+# %% [markdown]
+# #### S3 Bucket with Prefix
+#
+# The `S3FileHandler` will load in a model folder that is remote in an S3 Bucket.
 
 # %% tags=["parameters"]
 PREFIX='model-name'   # Name of the model, without trailing '/'
@@ -107,15 +138,29 @@ PROFILE=None          # The credentials profile in .aws - 'minio' for local trai
 S3_ENDPOINT_URL=None  # Endpoint URL: None for AWS S3, 'http://minio:9000' for local training
 
 # %%
-# fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
-# log = DeepRacerLog(filehandler=fh)
-# log.load_training_trace()
+if my_mode == MODE.S3:
+    fh = S3FileHandler(bucket=BUCKET, prefix=PREFIX, profile=PROFILE, s3_endpoint_url=S3_ENDPOINT_URL)
+    log = DeepRacerLog(filehandler=fh, verbose=True)
+    log.load_training_trace()
+
+# %% [markdown]
+# #### DeepRacer on AWS zipped archive
+#
+# The `TarFileHandler` will unzip and process the files inside a log file provided by DeepRacer on AWS.
+
+# %% tags=["parameters"]
+ARCHIVE_PATH='logs\deepracerindy-training-kJuf1ySmGZlhSMI-logs.tar.gz'
 
 # %%
-# Example / Alternative for logs on file-system
-fh = FSFileHandler(model_folder='logs/sample-console-logs/')
-log = DeepRacerLog(filehandler=fh)
-log.load_training_trace()
+if my_mode == MODE.TAR:
+    fh = TarFileHandler(archive_path=ARCHIVE_PATH)
+    log = DeepRacerLog(filehandler=fh, verbose=True)
+    log.load_training_trace()
+
+# %% [markdown]
+# ### Validate files
+#
+# The following cell checks whether the files loaded correctly. For file-system or S3 files, metadata will also be loaded, and you will see details printed below: the agent and network configuration, the hyperparameters, and the action space. Files loaded from DeepRacer on AWS will not provide this.
 
 # %%
 try:
@@ -125,48 +170,52 @@ try:
     print("-------------")
     pprint(log.action_space())
 except Exception:
-    print("Logs not available")
+    print("Metadata not available")
+
+# %% [markdown]
+# Now let's see what got loaded into the dataframe - the data structure holding your simulation information. The `head()` method prints out the first few lines of the data:
 
 # %%
 df = log.dataframe()
-
-# %% [markdown]
-# If the code above worked, you will see a list of details printed above: a bit about the agent and the network, a bit about the hyperparameters and some information about the action space. Now let's see what got loaded into the dataframe - the data structure holding your simulation information. the `head()` method prints out a few first lines of the data:
-
-# %%
 df.head()
 
 # %% [markdown]
-# ## Stability
-# When loading in the traces we can also analyze the stability of the simulator during the training. The DeepRacer simulator should run at 15 fps; meaning that each step should be on average 66.6ms apart. If the average is >70ms, and/or the 95th percentile is >90ms this means that there were performance problems with the simulator, which again could mean that the training was not as good as it could have been.
+# ### Stability
+# When loading in the traces we can also analyze the stability of the simulator during the training. The DeepRacer simulator should run at 15 fps; meaning that each step should be on average 66.6ms apart. If the average is >70ms, and/or the 95th percentile is >90ms, this means that there were performance problems with the simulator, which again could mean that the training was not as good as it could have been.
 
 # %%
 df_stats = log.stability.print_summary()
 
 # %% [markdown]
-# ## Load waypoints for the track you want to run analysis on
+# ## Load track waypoints
 #
 # The track waypoint files represent the coordinates of characteristic points of the track - the center line, inside border and outside border. Their main purpose is to visualise the track in images below.
 #
 # The naming of the tracks is not super consistent. The ones that we already know have been mapped to their official names in the track_meta dictionary.
 #
-# Some npy files have an 'Eval' suffix. One of the challenges in the past was that the evaluation tracks were different to physical tracks and we have recreated them to enable evaluation. Remeber that evaluation npy files are a community effort to visualise the tracks in the trainings, they aren't 100% accurate.
-#
 # Tracks Available:
 
 # %%
 tu = TrackIO()
+tracks_df = pd.DataFrame(
+    [{"filename": t, "name": track_meta.get(t[:-4], "Unknown")}
+     for t in tu.get_tracks()],
+    columns=["filename", "name"]
+)
 
-for track in tu.get_tracks():
-    print("{} - {}".format(track, track_meta.get(track[:-4], "I don't know")))
+@widgets.interact(filter=widgets.Text(placeholder="Filter by filename or name..."))
+def show_tracks(filter=""):
+    mask = (tracks_df["filename"].str.contains(filter, case=False) |
+            tracks_df["name"].str.contains(filter, case=False))
+    result = tracks_df[mask].reset_index(drop=True)
+    display(result.head(10).style.hide())
+
+
 
 # %% [markdown]
-# Now let's load the track:
+# Now let's load the track waypoints and visualize them.
 
 # %%
-# We will try to guess the track name first, if it 
-# fails, we'll use the constant in quotes
-
 try:
     track_name = log.agent_and_network()["world"]
 except Exception as e:
@@ -174,11 +223,10 @@ except Exception as e:
 
 
 track: Track = tu.load_track(track_name)
-
 pu.plot_trackpoints(track)
 
 # %% [markdown]
-# ## Graphs
+# ## Analyze the Training Data
 #
 # The original notebook has provided some great ideas on what could be visualised in the graphs. Below examples are a slightly extended version. Let's have a look at what they are presenting and what this may mean to your training.
 #
@@ -195,18 +243,18 @@ pu.plot_trackpoints(track)
 # At first the rewards just grow if the progress achieved grows. Interesting things may happen slightly later in the training:
 #
 # * The reward may go flat at some level - it might mean that the car can't get any better. If you think you could still squeeze something better out of it, review the car's progress and consider updating the reward function, the action space, maybe hyperparameters, or perhaps starting over (either from scratch or from some previous checkpoint)
-# * The reward may become wobbly - here you will see it as a mesh of dots zig-zagging. It can be a gradually growing zig-zag or a roughly stagnated one. This usually means the learning rate hyperparameter is too high and the car started doing actions that oscilate around some local extreme. You can lower the learning rate and hope to step closer to the extreme. Or run away from it if you don't like it
-# * The reward plunges to near zero and stays roughly flat - I only had that when I messed up the hyperparameters or the reward function. Review recent changes and start training over or consider starting from scratch
+# * The reward may become wobbly - here you will see it as a mesh of dots zig-zagging. It can be a gradually growing zig-zag or a roughly stagnated one. This usually means the learning rate hyperparameter is too high and the car started doing actions that oscillate around some local extreme. You can lower the learning rate and hope to step closer to the extreme, or abandon it in favour of a different starting point
+# * The reward plunges to near zero and stays roughly flat - this typically occurs when the hyperparameters or reward function contain an error. Review recent changes and start training over or consider starting from scratch
 #
 # The Standard deviation says how close from each other the reward values per episode in a given iteration are. If your model becomes reasonably stable and worst performances become better, at some point the standard deviation may flat out or even decrease. That said, higher speeds usually mean there will be areas on track with higher risk of failure. This may bring the value of standard deviation to a higher value and regardless of whether you like it or not, you need to accept it as a part of fighting for significantly better times.
 #
 # #### Time per iteration
 #
-# I'm not sure how useful this graph is. I would worry if it looked very similar to the reward graph - this could suggest that slower laps will be getting higher rewards. But there is a better graph for spotting that below.
+# The usefulness of this graph is limited. It is worth watching if it looks very similar to the reward graph - this could suggest that slower laps are getting higher rewards. There is a better graph for spotting that below.
 #
 # #### Progress per Iteration
 #
-# This graph usually starts low and grows and at some point it will get flatter. The maximum value for progress is 100% so it cannot grow without limits. It usually shows similar initial behaviours to reward and time graphs. I usually look at it when I alter an action in training. In such cases this graph usually dips a bit and then returns or goes higher.
+# This graph usually starts low and grows and at some point it will get flatter. The maximum value for progress is 100% so it cannot grow without limits. It usually shows similar initial behaviours to reward and time graphs. It is worth checking this graph when altering an action during training. In such cases this graph usually dips a bit and then returns or goes higher.
 #
 # #### Total reward per episode
 #
@@ -214,11 +262,11 @@ pu.plot_trackpoints(track)
 #
 # #### Mean completed lap times per iteration
 #
-# Once we have a model that completes laps reasonably often, we might want to know how fast the car gets around the track. This graph will show you that. I use it quite often when looking for a model to shave a couple more miliseconds. That said it has to go in pair with the last one:
+# Once we have a model that completes laps reasonably often, we might want to know how fast the car gets around the track. This graph will show you that. It is especially useful when looking for a model to shave a couple more milliseconds. That said it has to go in pair with the last one:
 #
 # #### Completion rate per iteration
 #
-# It represents how big part of all episodes in an iteration is full laps. The value is from range [0, 1] and is a result of dividing amount of full laps in iteration by amount of all episodes in iteration. I say it has to go in pair with the previous one because you not only need a fast lapper, you also want a race completer.
+# It represents what fraction of all episodes in an iteration are complete laps. The value is in the range [0, 1], calculated by dividing the number of complete laps in an iteration by the total number of episodes in that iteration. It should be read alongside the previous graph, because a fast lap time is only meaningful if the car also completes laps reliably.
 #
 # The higher the value, the more stable the model is on a given track.
 
@@ -237,8 +285,8 @@ au.analyze_training_progress(simulation_agg, title='Training progress')
 #
 # Previous graphs were mainly focused on the state of training with regards to training progress. This however will not give you a lot of information about how well your reward function is doing overall.
 #
-# In such case `scatter_aggregates` may come handy. It comes with three types of graphs:
-# * progress/steps/reward depending on the time of an episode - of this I find reward/time and new_reward/time especially useful to see that I am rewarding good behaviours - I expect the reward to time scatter to look roughly triangular
+# In such cases `scatter_aggregates` may come in handy. It provides three types of graphs:
+# * progress/steps/reward depending on the time of an episode - reward/time and new_reward/time are especially useful to confirm that good behaviours are being rewarded - the reward to time scatter should look roughly triangular
 # * histograms of time and progress - for all episodes the progress one is usually quite handy to get an idea of model's stability
 # * progress/time_if_complete/reward to closest waypoint at start - these are really useful during training as they show potentially problematic spots on track. It can turn out that a car gets best reward (and performance) starting at a point that just cannot be reached if the car starts elsewhere, or that there is a section of a track that the car struggles to get past and perhaps it's caused by an aggressive action space or undesirable behaviour prior to that place
 #
@@ -250,8 +298,8 @@ au.scatter_aggregates(simulation_agg, 'Stats for all laps')
 
 # %% [markdown]
 # ### Stats for complete laps
-# The graphs here are same as above, but now I am interested in other type of information:
-# * does the reward scatter show higher rewards for lower completion times? If I give higher reward for a slower lap it might suggest that I am training the car to go slow
+# The graphs here are the same as above, but the focus is on a different type of information:
+# * does the reward scatter show higher rewards for lower completion times? Granting a higher reward for a slower lap suggests the model is being trained to go slow
 # * what does the time histogram look like? With enough samples available the histogram takes a normal distribution graph shape. The lower the mean value, the better the chance to complete a fast lap consistently. The longer the tails, the greater the chance of getting lucky in submissions
 # * is the car completing laps around the place where the race lap starts? Or does it only succeed if it starts in a place different to the racing one?
 
@@ -265,15 +313,15 @@ else:
 
 # %% [markdown]
 # ### Categories analysis
-# We're going back to comparing training results based on the training time, but in a different way. Instead of just scattering things in relation to iteration or episode number, this time we're grouping episodes based on a certaing information. For this we use function:
+# We're going back to comparing training results based on training time, but in a different way. Instead of scattering values against iteration or episode number, this time episodes are grouped by position within the training. For this we use the function:
 # ```
-# analyze_categories(panda, category='quintile', groupcount=5, title=None)
+# scatter_by_groups(panda, groupcount=5, title=None)
 # ```
-# The idea is pretty simple - determine a way to cluster the data and provide that as the `category` parameter (alongside the count of groups available). In the default case we take advantage of the aggregated information to which quintile an episode belongs and thus build buckets each containing 20% of episodes which happened around the same time during the training. If your training lasted for five hours, this would show results grouped per each hour.
+# The idea is straightforward - episodes are divided into equally sized buckets (quintiles by default), each containing 20% of all episodes ordered by time. If your training lasted five hours, this would show results grouped roughly per hour.
 #
 # A side note: if you run the function with `category='start_at'` and `groupcount=20` you will get results based on the waypoint closest to the starting point of an episode. If you need to, you can introduce other types of categories and reuse the function.
 #
-# The graphs are similar to what we've seen above. I especially like the progress one which shows where the model tends to struggle and whether it's successful laps rate is improving or beginning to decrease. Interestingly, I also had cases where I saw the completion drop on the progress rate only to improve in a later quintile, but with a better time graph.
+# The graphs are similar to what we've seen above. The progress graph is particularly revealing - it shows where the model tends to struggle and whether its lap completion rate is improving or beginning to decrease. Interestingly, there are cases where the completion rate drops on the progress graph only to improve in a later quintile, accompanied by a better time graph.
 #
 # A second side note: if you run this function for `complete_ones` instead of `simulation_agg`, suddenly the time histogram becomes more interesting as you can see whether completion times improve.
 
@@ -283,7 +331,7 @@ au.scatter_by_groups(simulation_agg, title='Quintiles')
 # %% [markdown]
 # ## Data in tables
 #
-# While a lot can be seen in graphs that cannot be seen in the raw numbers, the numbers let us get into more detail. Below you will find a couple examples. If your model is behaving the way you would like it to, below tables may provide little added value, but if you struggle to improve your car's performance, they may come handy. In such cases I look for examples where high reward is giving to below-expected episode and when good episodes are given low reward.
+# While a lot can be seen in graphs that cannot be seen in the raw numbers, the numbers let us get into more detail. Below you will find a couple examples. If your model is behaving the way you would like it to, below tables may provide little added value, but if you struggle to improve your car's performance, they may come in handy. Look for examples where high reward is given to a below-expected episode and when good episodes are given low reward.
 #
 # You can then take the episode number and scatter it below, and also look at reward given per step - this can in turn draw your attention to some rewarding anomalies and help you detect some unexpected outcomes in your reward function.
 #
@@ -325,20 +373,23 @@ simulation_agg.head()
 # the view below will just hide some of the steps
 pd.set_option('display.max_rows', 500)
 
-# View all steps data for episode 10
-df[df['episode']==10]
+# View steps data for episode 10. Remove .head() for all steps.
+df[df['episode']==10].head()
 
 # %% [markdown]
-# ## Analyze the reward distribution for your reward function
+# ## Analyze the reward distribution
 
-# %%
-# This shows a histogram of actions per closest waypoint for episode 889.
-# Will let you spot potentially problematic places in reward granting.
-# In this example reward function is clearly `return 1`. It may be worrying
+# %% [markdown]
+# This shows a bar chart of reward per closest waypoint for the selected episode (episode 9 by default).
+# It will let you spot potentially problematic places in reward granting.
+# In this example, the reward function is clearly `return 1`. It may be worrying
 # if your reward function has some logic in it.
 # If you have a final step reward that makes the rest of this histogram
 # unreadable, you can filter the last step out by using
 # `episode[:-1].plot.bar` instead of `episode.plot.bar`
+#
+
+# %%
 episode = df[df['episode']==9]
 
 if episode.empty:
@@ -347,9 +398,9 @@ else:
     episode.plot.bar(x='closest_waypoint', y='reward')
 
 # %% [markdown]
-# ### Path taken for top reward iterations
+# ## Path Analysis
 #
-# NOTE: at some point in the past in a single episode the car could go around multiple laps, the episode was terminated when car completed 1000 steps. Currently one episode has at most one lap. This explains why you can see multiple laps in an episode plotted below.
+# NOTE: in earlier versions of the simulator, a single episode could span multiple laps, terminating only after 1000 steps. Currently, each episode covers at most one lap. If you are analysing logs from the older simulator, plots of individual episodes may therefore show more than one lap.
 #
 # Being able to plot the car's route in an episode can help you detect certain patterns in its behaviours and either promote them more or train away from them. While being able to watch the car go in the training gives some information, being able to reproduce it after the training is much more practical.
 #
@@ -375,7 +426,7 @@ try:
         pu.plot_selected_laps(episodes_to_plot, df, track)
 except:
     print("Multiple workers not detected, assuming 1 worker")
-    pu.plot_selected_laps(episodes_to_plot, df, track)
+    pu.plot_selected_laps(episodes_to_plot, df, track, single_plot=True)
 # %% [markdown]
 # ### Plot a heatmap of rewards for current training. 
 # The brighter the colour, the higher the reward granted in given coordinates.
@@ -384,9 +435,9 @@ except:
 #
 # Disproportion means you may have one reward of 10.000 and the rest in range 0.01-1.
 # In such cases the vast majority of dots will simply be very dark and the only bright dot
-# might be in a place difficult to spot. I recommend you go back to the tables and show highest
+# might be in a place difficult to spot. It is worth going back to the tables to show the highest
 # and average rewards per step to confirm if this is the case. Such disproportions may
-# not affect your traning very negatively, but they will make the data less readable in this notebook.
+# not affect your training very negatively, but they will make the data less readable in this notebook.
 #
 # Sparse data means that the car gets a high reward for the best behaviour and very low reward
 # for anything else, and worse even, reward is pretty much discrete (return 10 for narrow perfect,
@@ -402,7 +453,7 @@ pu.plot_track(df, track)
 
 # %% [markdown]
 # ### Plot a particular iteration
-# This is same as the heatmap above, but just for a single iteration.
+# This is the same as the heatmap above, but just for a single iteration.
 
 # %%
 #If you'd like some other colour criterion, you can add
@@ -436,13 +487,13 @@ iteration_id = 10
 pu.plot_selected_laps([iteration_id], df, track, section_to_plot = 'iteration')
 
 # %% [markdown]
-# # Action breakdown per iteration and historgram for action distribution for each of the turns - reinvent track
+# ## Action breakdown per turn - reinvent track
 #
-# This plot is useful to understand the actions that the model takes for any given iteration. Unfortunately at this time it is not fit for purpose as it assumes six actions in the action space and has other issues. It will require some work to get it to done but the information it returns will be very valuable.
+# This plot is useful to understand the actions that the model takes for any given iteration. Unfortunately at this time it is not fit for purpose as it assumes six actions in the action space and has other issues. It will require some work to get it done but the information it returns will be very valuable.
 #
-# This is a bit of an attempt to abstract away from the brilliant function in the original notebook towards a more general graph that we could use. It should be treated as a work in progress. The track_breakdown could be used as a starting point for a general track information object to handle all the customisations needed in methods of this notebook.
+# This is an attempt to generalise the function from the original notebook into a reusable graph that works for any action space. It should be treated as a work in progress. The track_breakdown could be used as a starting point for a general track information object to handle all the customisations needed in methods of this notebook.
 #
-# A breakdown track data needs to be available for it. If you cannot find it for the desired track, MAKEIT.
+# Track breakdown data needs to be available for it. If you cannot find it for the desired track, create it.
 #
 # Currently supported tracks:
 
