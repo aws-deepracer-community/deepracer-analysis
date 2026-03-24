@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.1
 #   kernelspec:
-#     display_name: .venv (3.12.10)
+#     display_name: .venv (3.12.3)
 #     language: python
 #     name: python3
 # ---
@@ -177,7 +177,7 @@ except Exception:
 
 # %%
 df = log.dataframe()
-df.head()
+display(df.head())
 
 # %% [markdown]
 # ### Stability
@@ -421,14 +421,15 @@ episodes_to_plot = simulation_agg.nlargest(3,'progress')
 
 try:
     if df.nunique(axis=0)['worker'] > 1:
-        pu.plot_selected_laps(episodes_to_plot, df, track, section_to_plot="unique_episode")
+        pu.plot_laps(episodes_to_plot, df, track, section_to_plot="unique_episode", style="modern")
     else:
-        pu.plot_selected_laps(episodes_to_plot, df, track)
+        pu.plot_laps(episodes_to_plot, df, track, single_plot=True, style="modern")
 except:
     print("Multiple workers not detected, assuming 1 worker")
-    pu.plot_selected_laps(episodes_to_plot, df, track, single_plot=True)
+    pu.plot_laps(episodes_to_plot, df, track, single_plot=True, style="modern")
+
 # %% [markdown]
-# ### Plot a heatmap of rewards for current training. 
+# ### Plot a heatmap of rewards for current training
 # The brighter the colour, the higher the reward granted in given coordinates.
 # If instead of a similar view as in the example below you get a dark image with hardly any 
 # dots, it might be that your rewards are highly disproportionate and possibly sparse.
@@ -452,39 +453,43 @@ except:
 pu.plot_track(df, track)
 
 # %% [markdown]
-# ### Plot a particular iteration
-# This is the same as the heatmap above, but just for a single iteration.
-
-# %%
-#If you'd like some other colour criterion, you can add
-#a value_field parameter and specify a different column
-iteration_id = 3
-
-pu.plot_track(df[df['iteration'] == iteration_id], track)
-
-# %% [markdown]
 # ### Path taken in a particular episode
 
-# %%
+# %% tags=["parameters"]
 episode_id = 12
 
 # %%
 try:
     if df.nunique(axis=0)['worker'] > 1:
-        pu.plot_selected_laps([episode_id], df, track, section_to_plot="unique_episode")
-    else: 
-        pu.plot_selected_laps([episode_id], df, track)
+        pu.plot_laps([episode_id], df, track, section_to_plot="unique_episode", style="modern")
+    else:
+        pu.plot_laps([episode_id], df, track, single_plot=True, style="modern")
 except:
     print("Multiple workers not detected, assuming 1 worker")
-    pu.plot_selected_laps([episode_id], df, track)
+    pu.plot_laps([episode_id], df, track, single_plot=True, style="modern")
+
 
 # %% [markdown]
-# ### Path taken in a particular iteration
+# ### All paths taken in a particular iteration
 
-# %%
+# %% tags=["parameters"]
 iteration_id = 10
 
-pu.plot_selected_laps([iteration_id], df, track, section_to_plot = 'iteration')
+# %%
+pu.plot_laps([iteration_id], df, track, section_to_plot='iteration', style="modern")
+
+# %% [markdown]
+# ### Interactive lap / iteration navigator
+#
+# Use the controls below to step through episodes or iterations one at a time.
+# The selected item is drawn in full colour; all others are shown dimmed so you can
+# see how the highlighted path compares to the rest of the training.
+# Toggle **Show context** off for a clean single-path view.
+#
+
+# %%
+# ── Episode navigator ─────────────────────────────────────────────────────────
+pu.plot_laps_navigator(df, track, section_to_plot='iteration')
 
 # %% [markdown]
 # ## Action breakdown per turn - reinvent track
